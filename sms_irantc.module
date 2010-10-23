@@ -1,0 +1,52 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Support for sending and recieving SMS messages using Iran.tc gateway.
+ */
+
+/**
+ * Implementation of hook_gateway_info().
+ */
+function sms_irantc_gateway_info() {
+  return array(
+    'irantc' => array(
+      'name' => 'Iran.tc',
+      'send' => 'sms_irantc_send',
+      'send form' => 'sms_irantc_send_form',
+      'configure form' => 'sms_irantc_admin_form',
+      'recieve' => TRUE,      
+    ),
+  );
+}
+
+/**
+ * Iran.tc SMS gateway administration form.
+ */
+function sms_irantc_admin_form($configuration) {
+  $form = array();
+  
+  $form['sms_irantc_line'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Line Number'),
+    '#description' => t('The numbrt of your Iran.tc phone line.'),
+    '#default_value' => $configuration['sms_irantc_line'],
+  );
+  
+  $form['sms_irantc_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#description' => t('The username of your Iran.tc account.'),
+    '#default_value' => $configuration['sms_irantc_username'],
+  );
+  
+  $form['sms_irantc_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#description' => t('The password of your Iran.tc account.'),
+    '#default_value' => $configuration['sms_irantc_password'],
+  );
+  
+  return $form;
+}
