@@ -262,7 +262,7 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
  */
 function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
   if ($display) {
-    drupal_set_message(t($message, $variables), 'error');
+    drupal_set_message(t($message, $variables), 'error', FALSE);
   }
   
   return array(
