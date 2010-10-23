@@ -7,6 +7,17 @@
  */
 
 /**
+ * Implementation of hook_init().
+ */
+function sms_irantc_init() {
+  // Load sms_irantc's config globally to prevent extra db lookups.
+  $GLOBALS['_sms_irantc'] = array(
+    'watchdog_log' => variable_get('sms_irantc_watchdog_log', TRUE),
+    'use_line_name' => variable_get('sms_irantc_use_line_name', FALSE),
+  );
+}
+
+/**
  * Implementation of hook_gateway_info().
  */
 function sms_irantc_gateway_info() {
@@ -32,6 +43,7 @@ function sms_irantc_admin_form($configuration) {
     '#title' => t('Line Number'),
     '#description' => t('The numbrt of your Iran.tc phone line.'),
     '#default_value' => $configuration['sms_irantc_line'],
+    '#required' => TRUE,
   );
   
   $form['sms_irantc_username'] = array(
@@ -39,6 +51,7 @@ function sms_irantc_admin_form($configuration) {
     '#title' => t('Username'),
     '#description' => t('The username of your Iran.tc account.'),
     '#default_value' => $configuration['sms_irantc_username'],
+    '#required' => TRUE,
   );
   
   $form['sms_irantc_password'] = array(
@@ -46,7 +59,176 @@ function sms_irantc_admin_form($configuration) {
     '#title' => t('Password'),
     '#description' => t('The password of your Iran.tc account.'),
     '#default_value' => $configuration['sms_irantc_password'],
+    '#required' => TRUE,
+  );
+  
+  $form['sms_irantc_additional_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Additional Options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  ); 
+  
+  $form['sms_irantc_additional_options']['sms_irantc_soap_server'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Iran.tc SOAP Server Endpoint'),
+    '#description' => t('Do not change the default, Unless you have a different endpoint in your technical documentation.'),
+    '#default_value' => $configuration['sms_irantc_soap_server'],
+    '#required' => TRUE,
+  );       
+  
+  $form['sms_irantc_additional_options']['sms_irantc_use_line_name'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use the line name instead of its number.'),
+    '#description' => t('If checked, SMS messages will be sent via your Line Name not the number. Note that you need to purchase a line name first.'),
+    '#default_value' => $configuration['sms_irantc_use_line_name'],
+    '#return_value' => TRUE,
+  );
+  
+  $form['sms_irantc_additional_options']['sms_irantc_watchdog_log'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Log sending/recieving errors to Watchdog.'),
+    '#description' => t('If checked, all errors will be logged into Watchdog during the process.'),
+    '#default_value' => $configuration['sms_irantc_watchdog_log'],
+    '#return_value' => TRUE,
+  );
+  
+  $form['sms_irantc_account_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Credit Balance'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  
+  $form['sms_irantc_account_info']['sms_irantc_balance'] = array(
+    '#type' => 'item',
+    '#title' => t('Account Balance'),    
+    '#description' => t('Your Iran.tc account balance.'),
+    '#value' => _sms_irantc_info('balance'),
+  );
+  
+  $form['sms_irantc_account_info']['sms_irantc_sent_count'] = array(
+    '#type' => 'item',
+    '#title' => t('Sent SMS count'),
+    '#description' => t('Your Iran.tc account balance.'),
+    '#value' => _sms_irantc_info('sent_count'),
   );
   
   return $form;
+}
+
+/**
+ * Iran.tc SMS send callback.
+ *
+ * @param $number
+ *   Reciever line number.
+ * @param $message
+ *   SMS message to be sent.
+ * @param $options
+ *   An array of additional properties as defined in gateway module's send form.
+ *
+ * @return
+ *   An array indicating the result of the send.
+ */
+function sms_irantc_send($number, $message, $options) {
+  // Determine which method has been configured to call.
+  $soap_method = $_sms_irantc['use_line_name'] ? '‫‪SendSMS_UseName‬‬' : 'SendSMS';
+  
+  // Calling the SOAP method, returning a status array to smsframework.
+  return _sms_irantc_soap_call($soap_method, array(
+    'text' => $message,
+    'reciever' => $number,     
+  ));
+}
+
+/**
+ * Helper function to call a remote SOAP method.
+ *
+ * @param $soap_method
+ *   Remote SOAP method to call.
+ * @param $soap_params
+ *   SOAP parameters.
+ * @param $soap_options
+ *   SOAP call options.
+ *
+ * @return
+ *   SOAP call results or an error array.
+ */
+function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL) {
+  // Settings default SOAP options, if not yet set.
+  if (is_null($soap_options)) {
+    $soap_options = array(
+      'style' => 'rpc',
+      'use' => 'encoded',
+    );
+  }
+  
+  // Filling necessary SOAP call options.
+  $soap_params['username'] = variable_get('sms_irantc_username', '');
+  $soap_params['password'] = variable_get('sms_irantc_password', '');
+  $soap_params['sender'] = variable_get('sms_irantc_line', '');
+  
+  // Getting a DrupalSoapClient instance.
+  $soap_server = variable_get('sms_irantc_soap_server', 'http://iran.tc/WebService/Service.php');
+  $soap_client = soapclient_init_client($soap_server, TRUE, $soap_options);
+
+  // Checking instantiation errors.
+  if (!empty($soap_client['#error'])) {
+    return _sms_irantc_log_error('Could not connect to Iran.tc webservice.');
+  }
+  
+  return $soap_client['#return']->call($soap_method, $soap_params);
+}
+
+/**
+ * Helper function to display and log sms_irantc errors.
+ *
+ * @param $message
+ *   Error message to be logged.
+ * @param $variables
+ *   Array to be placed on placeholders in $message.
+ * 
+ * @return
+ *   An array of error details to be sent back to smsframework.
+ */
+function _sms_irantc_log_error($message, $variables = array()) {
+  global $_sms_irantc;
+  
+  // Sanitize variables.
+  if (!empty($variables)) {
+    $variables = array_map('check_plain', $variables);
+  }
+  
+  // Display error to the end user.
+  // drupal_set_message(t($message, $variables), 'error');
+  
+  // Log to Watchdog if configured so.
+  if ($_sms_irantc['watchdog_log']) {
+    watchdog('sms_irantc', $message, $variables, WATCHDOG_ERROR);
+  }
+  
+  return array(
+    'status' => FALSE,
+    'message' => $message,
+    'variables' => $variables,
+  );
+}
+
+/**
+ * Helper function to get an user account balance.
+ *
+ * @param $about
+ *   The info headline to be returned.
+ *
+ * @return
+ *   Requested info.
+ */
+function _sms_irantc_info($about) {
+  switch ($about) {
+    case 'balance':
+      return '100 SMS';
+      
+    case 'sent_count':
+      return '32 SMS';
+  }
 }
