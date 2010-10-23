@@ -206,9 +206,11 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
   $gateway = sms_gateways('gateway', 'irantc');
   
   // Determine which method has been configured to call.
-  if ($soap_method == 'SendSMS' && $gateway['configuration']['sms_irantc_use_line_name'] === TRUE) {
-    $soap_method = '‫‪SendSMS_UseName‬‬';
+  if ($soap_method == 'SendSMS') {    
     $soap_params['sender'] = $gateway['configuration']['sms_irantc_line'];
+    if ($gateway['configuration']['sms_irantc_use_line_name'] == TRUE) {
+      $soap_method = '‫‪SendSMS_UseName‬‬';
+    }
   }
   
   // Filling necessary SOAP call auth parameters.
