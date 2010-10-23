@@ -124,9 +124,14 @@ function sms_irantc_admin_form($configuration) {
  *   An array outputed from _sms_irantc_soap_parse() helper.
  */
 function sms_irantc_send($number, $message, $options) {
+  // The devs at Iran.tc request a associative array,
+  // But they process it as an ordinary array! *******!
   $results = _sms_irantc_soap_call('SendSMS', array(
+    'username' => '',
+    'password' => '',
+    'reciever' => $number,
     'text' => $message,
-    'reciever' => $number,     
+    'sender' => '',         
   ));
   
   // Return the error array, if there were any.
@@ -240,10 +245,10 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
 }
 
 /**
- * Helper function to handle a module error.
+ * Helper function to handle the module errors.
  *
  * The error array needs to be passed to smsframwork via the send callback.
- * It also sets a drupal message to show to the end-user if it configured so.
+ * It also sets a drupal message to show the message to the end-user if it configured so.
  *
  * @param $message
  *   Error message.
@@ -262,6 +267,34 @@ function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
   
   return array(
     'status' => FALSE,
+    'message' => $message,
+    'variables' => $variables,
+  );
+}
+
+/**
+ * Helper function to successify a send operation.
+ *
+ * The success array needs to be passed to smsframwork via the send callback.
+ * It also sets a drupal message to show the message to the end-user if it configured so.
+ *
+ * @param $message
+ *   Success message.
+ * @param $variables
+ *   Placeholders to be placed in $message.
+ * @param $display
+ *   To display the message or not.
+ *
+ * @return
+ *   The said error array.
+ */
+function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
+  if ($display) {
+    drupal_set_message(t($message, $variables));
+  }
+  
+  return array(
+    'status' => TRUE,
     'message' => $message,
     'variables' => $variables,
   );
@@ -292,14 +325,10 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
   
   // Parsing a sender method results.
   if (in_array($soap_method, $methods['sender'])) {
-    // If we got a 8/36 character long receipt, 
-    // there were a successfull send operation.
-    if (strlen($soap_results) == 8 || strlen($soap_results) == 36) {
-      return array(
-        'status' => TRUE,
-        'message' => 'Your SMS message has been sent successfully. SMS Receipt: @receipt',
-        'variables' => array('@receipt' => $soap_results),
-      );
+    // Got a 8+ character long receipt?
+    // So there were a successfull send operation.
+    if (strlen($soap_results) >= 8) {
+      return _sms_irantc_success('Your SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results));
     }
     
     return _sms_irantc_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results));
