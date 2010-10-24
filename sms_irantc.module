@@ -64,11 +64,13 @@ function sms_irantc_admin_form($configuration) {
     '#collapsed' => TRUE,
   );
   
+  $server = $configuration['sms_irantc_soap_server'];
+  $server = $server ? $server : 'http://iran.tc/WebService/Service.php';
   $form['sms_irantc_additional_options']['sms_irantc_soap_server'] = array(
     '#type' => 'textfield',
     '#title' => t('Iran.tc SOAP Server Endpoint'),
     '#description' => t('Do not change the default, Unless you have a different endpoint in your technical documentation.'),
-    '#default_value' => $configuration['sms_irantc_soap_server'],
+    '#default_value' => $server,
     '#required' => TRUE,
   );       
   
@@ -247,7 +249,7 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
 /**
  * Helper function to handle the module errors.
  *
- * The error array needs to be passed to smsframwork via the send callback.
+ * The error array needs to be passed to smsframework via the send callback.
  * It also sets a drupal message to show the message to the end-user if it configured so.
  *
  * @param $message
@@ -275,7 +277,7 @@ function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
 /**
  * Helper function to successify a send operation.
  *
- * The success array needs to be passed to smsframwork via the send callback.
+ * The success array needs to be passed to smsframework via the send callback.
  * It also sets a drupal message to show the message to the end-user if it configured so.
  *
  * @param $message
