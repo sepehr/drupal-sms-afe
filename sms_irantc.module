@@ -275,7 +275,7 @@ function sms_irantc_incoming_callback() {
   $receiver = check_plain($_REQUEST['to']);  
   $message = check_plain($_REQUEST['text']);
   $sender = _sms_irantc_number_prefix_purge(check_plain($_REQUEST['from']));
-  
+
   watchdog('sms_irantc', 'Received SMS message from %sender: %message', array(
     '%sender' => $sender,
     '%message' => $message,
@@ -555,16 +555,14 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
  *   Prefix-purged number.
  */
 function _sms_irantc_number_prefix_purge($number) {
-  $number = strtr($number, array(
-    '0098' => '',
-    '+98' => '',
-  ));
-  
+  $number = ltrim(trim($number), '0');
+  $number = str_replace('+98', '', $number);
+
   if (substr($number, 0, 2) == '98') {
     $number = substr($number, 2);
   }
   
-  return ltrim($number, '0');
+  return $number;
 }
 
 /**
