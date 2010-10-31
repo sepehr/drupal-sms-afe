@@ -18,7 +18,7 @@ define('SMS_IRANTC_METHOD_TOTAL', 2);
 function sms_irantc_menu() {
   $items = array();
   
-  $items['sms/irantc/reciever'] = array(
+  $items['sms/irantc/receiver'] = array(
     'title' => 'Incoming SMS Messages Gateway',
     'description' => 'Incoming SMS messages form Iran.tc gateway',
     'page callback' => 'sms_irantc_incoming_callback',
