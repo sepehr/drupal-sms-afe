@@ -39,7 +39,7 @@ function sms_irantc_gateway_info() {
       'send' => 'sms_irantc_send',
       'send form' => 'sms_irantc_send_form',
       'configure form' => 'sms_irantc_admin_form',
-      'recieve' => TRUE,      
+      'receive' => TRUE,      
     ),
   );
 }
@@ -149,7 +149,7 @@ function sms_irantc_admin_form($configuration) {
       '#value' => $tmp,
     );
     
-    $tmp = _sms_irantc_info('recieved_total_count');
+    $tmp = _sms_irantc_info('received_total_count');
     $tmp = ($tmp === '0' || $tmp) ? $tmp . ' ' . t('SMS Messages.') : t('Could not get the account information.');
     $form['sms_irantc_info']['sms_irantc_info_received_count'] = array(
       '#type' => 'item',
@@ -279,12 +279,12 @@ function _sms_irantc_info($type) {
       $soap_results = _sms_irantc_soap_call('CREDIT_LINESMS', $soap_params);
       return _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results);
       
-    case 'recieved_new_count':
+    case 'received_new_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_NEW;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
       return _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
       
-    case 'recieved_total_count':
+    case 'received_total_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_TOTAL;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
       return _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
