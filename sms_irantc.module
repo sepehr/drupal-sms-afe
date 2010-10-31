@@ -272,9 +272,9 @@ function sms_irantc_send($number, $message, $options) {
  * Menu page callback for traffic relay listener.
  */
 function sms_irantc_incoming_callback() {
-  $sender = check_plain($_REQUEST['from']);
   $receiver = check_plain($_REQUEST['to']);  
   $message = check_plain($_REQUEST['text']);
+  $sender = _sms_irantc_number_prefix_purge(check_plain($_REQUEST['from']));
   
   watchdog('sms_irantc', 'Received SMS message from %sender: %message', array(
     '%sender' => $sender,
