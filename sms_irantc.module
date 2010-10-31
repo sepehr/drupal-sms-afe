@@ -39,6 +39,7 @@ function sms_irantc_gateway_info() {
       'send' => 'sms_irantc_send',
       'send form' => 'sms_irantc_send_form',
       'configure form' => 'sms_irantc_admin_form',
+      'format number' => 'sms_irantc_format_number',
       'receive' => TRUE,      
     ),
   );
@@ -194,6 +195,21 @@ function sms_irantc_send_form() {
   );
   
   return $form;
+}
+
+/**
+ * SMSFramework number formatter callback for Iran.tc gateway.
+ *
+ * @param $number
+ *   The number to be pretty formatted.
+ * @param $options
+ *   Gateway additional options.
+ *
+ * @return
+ *   Formatted number.
+ */
+function sms_irantc_format_number($number, $options) {
+  return $number;
 }
 
 /**
