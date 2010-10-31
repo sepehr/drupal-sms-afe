@@ -182,6 +182,21 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
 }
 
 /**
+ * Iran.tc SMS send form.
+ */
+function sms_irantc_send_form() {
+  $form['area_code'] = array(
+    '#type' => 'select',
+    '#title' => t('Area code'),
+    '#multiple' => FALSE,
+    '#default_value' => '98',
+    '#options' => _sms_irantc_area_codes(),
+  );
+  
+  return $form;
+}
+
+/**
  * Iran.tc SMS send callback.
  *
  * @param $number
@@ -195,8 +210,8 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
  *   An array outputed from _sms_irantc_soap_parse() helper.
  */
 function sms_irantc_send($number, $message, $options) {
-  // The devs at Iran.tc request a associative array,
-  // But they process it as an ordinary array! *******!
+  // The devs at Iran.tc, they requested an associative array,
+  // But they process that as an ordinary array! ***************!
   $results = _sms_irantc_soap_call('SendSMS', array(
     'username' => '',
     'password' => '',
@@ -495,3 +510,14 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
   }
 }
 
+/**
+ * Helper function to return an array of Iran.tc gateway supported area codes.
+ *
+ * @return
+ *   An array of supported area codes.
+ */
+function _sms_irantc_area_codes() {
+  return array(
+    98 => '+98 (Iran)',
+  );
+}
