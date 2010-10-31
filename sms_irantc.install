@@ -10,9 +10,9 @@
  * Implementation of hook_install().
  */
 function sms_irantc_install() {
-  drupal_set_message(st('Iran.tc SMS Gateway has been installed. Please set your settings in !link.',
+  drupal_set_message(st('Iran.tc SMS Gateway has been installed. Please set your settings in <a href="!link">configuration page</a>.',
     array(
-      '!link' => l(st('configuration page'), 'admin/smsframework/gateways/irantc'),
+      '!link' => url('admin/smsframework/gateways/irantc'),
     )
   ));
 }
