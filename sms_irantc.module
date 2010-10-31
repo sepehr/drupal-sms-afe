@@ -40,6 +40,7 @@ function sms_irantc_gateway_info() {
       'send form' => 'sms_irantc_send_form',
       'configure form' => 'sms_irantc_admin_form',
       'format number' => 'sms_irantc_format_number',
+      'validate number' => 'sms_irantc_validate_number',
       'receive' => TRUE,      
     ),
   );
@@ -208,8 +209,26 @@ function sms_irantc_send_form() {
  * @return
  *   Formatted number.
  */
-function sms_irantc_format_number($number, $options) {
-  return $number;
+function sms_irantc_format_number($number, $options = array()) {
+  return _sms_irantc_number_prefix_purge($number);
+}
+
+/**
+ * SMSFramework number validator callback for Iran.tc gateway.
+ *
+ * @param $number
+ *   The number to be validated.
+ * @param $options
+ *   Gateway additional options.
+ *
+ * @return
+ *   Error if could not validate.
+ */
+function sms_irantc_validate_number(&$number, $options = array()) {
+  $number = _sms_irantc_number_prefix_purge($number);
+  if (drupal_strlen($number) != 10) {
+    return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
+  }
 }
 
 /**
@@ -524,6 +543,28 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
         break;
     }
   }
+}
+
+/**
+ * Helper function to remove zero and/or area code prefixes from a mobile number.
+ *
+ * @param $number
+ *   Number to get prefix-purged!
+ *
+ * @return
+ *   Prefix-purged number.
+ */
+function _sms_irantc_number_prefix_purge($number) {
+  $number = strtr($number, array(
+    '0098' => '',
+    '+98' => '',
+  ));
+  
+  if (substr($number, 0, 2) == '98') {
+    $number = substr($number, 2);
+  }
+  
+  return ltrim($number, '0');
 }
 
 /**
