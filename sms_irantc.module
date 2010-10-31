@@ -200,7 +200,7 @@ function sms_irantc_send_form() {
  * Iran.tc SMS send callback.
  *
  * @param $number
- *   Reciever line number.
+ *   Receiver line number.
  * @param $message
  *   SMS message to be sent.
  * @param $options
@@ -215,7 +215,7 @@ function sms_irantc_send($number, $message, $options) {
   $results = _sms_irantc_soap_call('SendSMS', array(
     'username' => '',
     'password' => '',
-    'reciever' => $number,
+    'reciever' => $number, // Ya, they also have a typo here!
     'text' => $message,
     'sender' => '',         
   ));
