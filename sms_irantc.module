@@ -37,7 +37,6 @@ function sms_irantc_gateway_info() {
     'irantc' => array(
       'name' => 'Iran.tc',
       'send' => 'sms_irantc_send',
-      'send form' => 'sms_irantc_send_form',
       'configure form' => 'sms_irantc_admin_form',
       'format number' => 'sms_irantc_format_number',
       'validate number' => 'sms_irantc_validate_number',
@@ -181,21 +180,6 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
   if ($form_state['values']['sms_irantc_use_line_name']) {
     drupal_set_message(t('You have chosen to use a <em>Line Name</em> instead of your <em>Line Number</em> for outgoing messages. Please make sure that you have a Line Name bundled with your account at <a href="!link">Iran.tc control panel</a> or you get errors.', array('!link' => 'http://iran.tc/')), 'warning');
   }
-}
-
-/**
- * Iran.tc SMS send form.
- */
-function sms_irantc_send_form() {
-  $form['area_code'] = array(
-    '#type' => 'select',
-    '#title' => t('Area code'),
-    '#multiple' => FALSE,
-    '#default_value' => '98',
-    '#options' => _sms_irantc_area_codes(),
-  );
-  
-  return $form;
 }
 
 /**
@@ -565,14 +549,3 @@ function _sms_irantc_number_prefix_purge($number) {
   return $number;
 }
 
-/**
- * Helper function to return an array of Iran.tc gateway supported area codes.
- *
- * @return
- *   An array of supported area codes.
- */
-function _sms_irantc_area_codes() {
-  return array(
-    98 => '+98 (Iran)',
-  );
-}
