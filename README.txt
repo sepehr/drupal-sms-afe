@@ -27,9 +27,10 @@ Installation
   - Leave other fields as their defaults and save the configuration.
 
 3. If you wish to also be able to receive SMS messages:
-  - Copy the URL under the Incoming SMS Settings fieldset.
-  - Login to your [Iran.tc](http://iran.tc/) control panel.
-  - Under "Webservices > Incoming messages", paste the URL and save.
+  - Go to admin/smsframework/gateways/irantc.
+  - Copy the URL under the Incoming SMS Settings section labeled "Traffic Relay Gateway".
+  - Login to your [Iran.tc](http://iran.tc/) control panel at their website.
+  - Under "Web Services" menu, click on "Incoming messages", paste the URL and save.
 
 
 Important Notice
