@@ -21,19 +21,26 @@ Installation
   - Under "Active SOAP Library" check the "nuSOAP" option.
   - Leave other options as default.
   
-3. Install and enable [Iran.tc SMS Gateway](http://drupal.org/project/sms_irantc)
+2. Install and enable [Iran.tc SMS Gateway](http://drupal.org/project/sms_irantc)
   - Go to admin/smsframework/gateways/irantc.
   - Fill the required fields by the credentials provided by Iran.tc.
-  - Leave others as default and save the configuration.
+  - Leave other fields as their defaults and save the configuration.
+
+3. If you wish to also be able to receive SMS messages:
+  - Copy the URL under the Incoming SMS Settings fieldset.
+  - Login to your [Iran.tc](http://iran.tc/) control panel.
+  - Under "Webservices > Incoming messages", paste the URL and save.
+
 
 Important Notice
 ================
 Unfortunately nuSOAP library is written in PHP4 style and in my opinion it could be better in its configuration and design.
 Anyway You need to change the nuSOAP class charset encoding configs manually to make this module work properly, otherwise you'll get something like:
 
-    error in msg parsing: Charset from HTTP Content-Type 'UTF-8' does not match encoding from XML declaration 'ISO-8859-1'
+    Error in msg parsing:
+    Charset from HTTP Content-Type 'UTF-8' does not match encoding from XML declaration 'ISO-8859-1'.
     
-To prevent this edit the `nusoap.php` file:
+To prevent this, open the `nusoap.php` file and:
     
     // Change this:
     var $soap_defencoding = 'ISO-8859-1';
