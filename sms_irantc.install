@@ -5,17 +5,16 @@
  * @file
  * Iran.tc un/installtion hooks.
  */
- 
+
 /**
  * Implementation of hook_install().
  */
 function sms_irantc_install() {
   drupal_set_message(st('Iran.tc SMS Gateway has been installed. Please set your settings in <a href="!link">configuration page</a>.',
-    array(
-      '!link' => url('admin/smsframework/gateways/irantc'),
-    )
+    array('!link' => url('admin/smsframework/gateways/irantc'))
   ));
 }
+
 
 /**
  * Implementation of hook_uninstall().
@@ -23,3 +22,4 @@ function sms_irantc_install() {
 function sms_irantc_uninstall() {
   variable_del('sms_irantc_settings');
 }
+
