@@ -107,6 +107,8 @@ function sms_irantc_admin_form($configuration) {
     '#return_value' => TRUE,
   );
 
+  // If API credentials is already set,
+  // provide more configuration options and account information.
   if ($configuration['sms_irantc_username'] && $configuration['sms_irantc_password']) {
     // Incoming SMS Settings fieldset.
     $form['sms_irantc_incoming_settings'] = array(
@@ -134,7 +136,8 @@ function sms_irantc_admin_form($configuration) {
     );
 
     $tmp = _sms_irantc_info('credit');
-    $tmp = ($tmp === '0' || $tmp) ? $tmp . ' ' . t('IRR.') : t('Could not get the account balance.');
+    dpm($tmp);
+    $tmp = ($tmp === '0' || !is_array($tmp) || $tmp) ? $tmp . ' ' . t('IRR.') : t('Could not get the account balance.');
     $form['sms_irantc_info']['sms_irantc_info_credit'] = array(
       '#type' => 'item',
       '#title' => t('Account Balance'),
@@ -163,6 +166,7 @@ function sms_irantc_admin_form($configuration) {
 
   return $form;
 }
+
 
 /**
  * Validation callback for administration form.
@@ -256,6 +260,7 @@ function sms_irantc_send($number, $message, $options) {
   return _sms_irantc_soap_parse('SendSMS', $results);
 }
 
+
 /**
  * Menu page callback for traffic relay listener.
  */
@@ -273,12 +278,14 @@ function sms_irantc_incoming_callback() {
   sms_incoming($sender, $message);
 }
 
+
 /**
  * Menu access callback for traffic relay listener.
  */
 function sms_irantc_incoming_access() {
   return TRUE;
 }
+
 
 /**
  * Helper function to get Iran.tc account info.
@@ -300,23 +307,28 @@ function _sms_irantc_info($type) {
   switch ($type) {
     case 'credit':
       $soap_results = _sms_irantc_soap_call('CREDIT_LINESMS', $soap_params);
-      return _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results);
+      return $soap_results->status ?
+        _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results) : t('Could not get the account balance.');
 
     case 'received_new_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_NEW;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      return _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+      return $soap_results->status ?
+        _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results) : t('Could not get the account new messages info.');
 
     case 'received_total_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_TOTAL;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      return _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+      return $soap_results->status ?
+        _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results) : t('Could not get the account total messages info.');
 
     case 'sent_count':
       $soap_results = _sms_irantc_soap_call('COUNT_SENDSMS', $soap_params);
-      return _sms_irantc_soap_parse('COUNT_SENDSMS', $soap_results);
+      return $soap_results->status ?
+        _sms_irantc_soap_parse('COUNT_SENDSMS', $soap_results) : t('Could not get the account sent messages info.');
   }
 }
+
 
 /**
  * Helper function to call a remote SOAP method.
@@ -355,13 +367,14 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
   $soap_params['username'] = $gateway['configuration']['sms_irantc_username'];
   $soap_params['password'] = $gateway['configuration']['sms_irantc_password'];
 
-  // Getting a DrupalSoapClient instance.
+  // Instantiate a DrupalSoapClient instance.
   $soap_server = $gateway['configuration']['sms_irantc_soap_server'];
   $soap_client = soapclient_init_client($soap_server, FALSE, $soap_options);
 
   // Checking instantiation errors.
   if ($soap_client['#error']) {
-    return _sms_irantc_error('Could not connect to SMS gateway webservice.');
+    watchdog('sms_irantc', 'Could not connect to SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
+    return _sms_irantc_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.');
   }
 
   // Call the SOAP method and check for errors.
@@ -373,7 +386,7 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
   }
 
   // Return the SOAP call results, if there were no SOAP error.
-  // The function who recive this results, should check it for operation status codes.
+  // The function who receive these results, should check it for operation status codes.
   return $soap_results['#return'];
 }
 
@@ -406,6 +419,7 @@ function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
   );
 }
 
+
 /**
  * Helper function to successify a send operation.
  *
@@ -434,6 +448,7 @@ function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
   );
 }
 
+
 /**
  * Parses the SOAP method call results.
  *
@@ -447,7 +462,7 @@ function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
  */
 function _sms_irantc_soap_parse($soap_method, $soap_results) {
   // Defining method categories,
-  // to be able to run the proper action.
+  // to be able to run proper actions.
   $methods = array(
     'sender' => array(
       'SendSMS', 'SendSMS_UseName',
@@ -461,15 +476,15 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
   if (in_array($soap_method, $methods['sender'])) {
     // Got a 8+ character long receipt?
     // So there were a successfull send operation.
-    // No need to use drupal_strlen() equivalent.
+    // No need to use drupal's strlen() equivalent here.
     if (strlen($soap_results) >= 8) {
       return _sms_irantc_success('Your SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results));
     }
-    
+    // Otherwise we got a error status code.
     return _sms_irantc_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results));
   }
 
-  // Parsing a credit method results.
+  // Parsing a credit typed method results.
   elseif (in_array($soap_method, $methods['credit'])) {
     switch ($soap_results) {
       case '-1':
@@ -534,6 +549,7 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
     }
   }
 }
+
 
 /**
  * Helper function to remove zero and/or area code prefixes from a mobile number.
