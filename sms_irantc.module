@@ -150,7 +150,6 @@ function sms_irantc_admin_form($configuration) {
       '#value' => _sms_irantc_info('sent_count'),
     );
 
-    $tmp = ($tmp === '0' || $tmp) ? $tmp . ' ' . t('SMS Messages.') : t('Could not get the account information.');
     $form['sms_irantc_info']['sms_irantc_info_received_count'] = array(
       '#type' => 'item',
       '#title' => t('Received Count'),
