@@ -11,7 +11,8 @@
  */
 define('SMS_IRANTC_METHOD_NEW', 1);
 define('SMS_IRANTC_METHOD_TOTAL', 2);
-
+define('SMS_IRANTC_TYPE_SEND', 3);
+define('SMS_IRANTC_TYPE_CREDIT', 4);
 
 /**
  * Implementation of hook_menu().
@@ -135,32 +136,26 @@ function sms_irantc_admin_form($configuration) {
       '#collapsed' => FALSE,
     );
 
-    $tmp = _sms_irantc_info('credit');
-    dpm($tmp);
-    $tmp = ($tmp === '0' || !is_array($tmp) || $tmp) ? $tmp . ' ' . t('IRR.') : t('Could not get the account balance.');
     $form['sms_irantc_info']['sms_irantc_info_credit'] = array(
       '#type' => 'item',
       '#title' => t('Account Balance'),
       '#description' => t('You Iran.tc SMS balance.'),
-      '#value' =>  $tmp,
+      '#value' => _sms_irantc_info('credit'),
     );
 
-    $tmp = _sms_irantc_info('sent_count');
-    $tmp = ($tmp === '0' || $tmp) ? $tmp . ' ' . t('SMS Messages.') : t('Could not get the account information.');
     $form['sms_irantc_info']['sms_irantc_info_sent_count'] = array(
       '#type' => 'item',
       '#title' => t('Sent Count'),
       '#description' => t('The total number of SMS messages sent from your Iran.tc account.'),
-      '#value' => $tmp,
+      '#value' => _sms_irantc_info('sent_count'),
     );
 
-    $tmp = _sms_irantc_info('received_total_count');
     $tmp = ($tmp === '0' || $tmp) ? $tmp . ' ' . t('SMS Messages.') : t('Could not get the account information.');
     $form['sms_irantc_info']['sms_irantc_info_received_count'] = array(
       '#type' => 'item',
       '#title' => t('Received Count'),
       '#description' => t('The total number of SMS messages received into your Iran.tc account.'),
-      '#value' => $tmp,
+      '#value' => _sms_irantc_info('received_total_count'),
     );
   }
 
@@ -238,11 +233,11 @@ function sms_irantc_validate_number(&$number, $options = array()) {
  */
 function sms_irantc_send($number, $message, $options) {
   // The devs at Iran.tc, they requested an associative array,
-  // But they process that as an ordinary array! ***************!
+  // But they process that as an ordinary one! Long live guys!
   $results = _sms_irantc_soap_call('SendSMS', array(
     'username' => '',
     'password' => '',
-    'reciever' => $number, // Ya, they also have a typo here!
+    'reciever' => $number, // Also a typo!
     'text' => $message,
     'sender' => '',
   ));
@@ -280,7 +275,7 @@ function sms_irantc_incoming_callback() {
 
 
 /**
- * Menu access callback for traffic relay listener.
+ * Access callback for traffic relay listener.
  */
 function sms_irantc_incoming_access() {
   return TRUE;
@@ -288,7 +283,7 @@ function sms_irantc_incoming_access() {
 
 
 /**
- * Helper function to get Iran.tc account info.
+ * Helper function to get and theme Iran.tc account info.
  *
  * @param $type
  *   Type of needed information to get.
@@ -297,35 +292,45 @@ function sms_irantc_incoming_access() {
  *   Either the operation error or results.
  */
 function _sms_irantc_info($type) {
-  // Getting gateway configuration and setting SOAP parameters.
-  $gateway = sms_gateways('gateway', 'irantc');
   $soap_params = array(
-    'username' => $gateway['configuration']['sms_irantc_username'],
-    'password' => $gateway['configuration']['sms_irantc_password'],
+    'username' => '',
+    'password' => '',
   );
 
   switch ($type) {
     case 'credit':
-      $soap_results = _sms_irantc_soap_call('CREDIT_LINESMS', $soap_params);
-      return $soap_results->status ?
-        _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results) : t('Could not get the account balance.');
+      $soap_results = _sms_irantc_soap_call('CREDIT_LINESMS');
+      $soap_parsed_results = _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results);
+
+      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
+        t('Could not get the account balance.') :
+        $soap_parsed_results . ' ' . t('IRR.');
 
     case 'received_new_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_NEW;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      return $soap_results->status ?
-        _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results) : t('Could not get the account new messages info.');
+      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+
+      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
+        t('Could not get the account new messages info.') :
+        $soap_parsed_results . ' ' . t('Messages');
 
     case 'received_total_count':
       $soap_params['method'] = SMS_IRANTC_METHOD_TOTAL;
       $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      return $soap_results->status ?
-        _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results) : t('Could not get the account total messages info.');
+      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+
+      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
+        t('Could not get the account total messages info.') :
+        $soap_parsed_results . ' ' . t('Messages');
 
     case 'sent_count':
-      $soap_results = _sms_irantc_soap_call('COUNT_SENDSMS', $soap_params);
-      return $soap_results->status ?
-        _sms_irantc_soap_parse('COUNT_SENDSMS', $soap_results) : t('Could not get the account sent messages info.');
+      $soap_results = _sms_irantc_soap_call('COUNT_SENDSMS');
+      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_SENDSMS', $soap_results);
+
+      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
+        t('Could not get the account sent messages info.') :
+        $soap_parsed_results . ' ' . t('Messages');
   }
 }
 
@@ -343,7 +348,7 @@ function _sms_irantc_info($type) {
  * @return
  *   SOAP call results or an error array.
  */
-function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL) {
+function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_options = NULL) {
   // Settings default SOAP options, if not yet set.
   if (is_null($soap_options)) {
     $soap_options = array(
@@ -356,16 +361,22 @@ function _sms_irantc_soap_call($soap_method, $soap_params, $soap_options = NULL)
   $gateway = sms_gateways('gateway', 'irantc');
 
   // Determine which method has been configured to call.
-  if ($soap_method == 'SendSMS') {
+  // Redicolously if sending a message, the 'sender' element
+  // should be exactly at this postion in $soap_params array.
+  if (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_SEND) {
     $soap_params['sender'] = $gateway['configuration']['sms_irantc_line'];
-    if ($gateway['configuration']['sms_irantc_use_line_name'] == TRUE) {
-      $soap_method = '‫‪SendSMS_UseName‬‬';
-    }
+    $soap_method = $gateway['configuration']['sms_irantc_use_line_name'] ? '‫‪SendSMS_UseName‬‬' : 'SendSMS';
   }
 
   // Filling necessary SOAP call auth parameters.
   $soap_params['username'] = $gateway['configuration']['sms_irantc_username'];
   $soap_params['password'] = $gateway['configuration']['sms_irantc_password'];
+
+  // Also add sender (exactly at this position) if
+  // we're calling service CREDIT_LINESMS method.
+  if ($soap_method == 'CREDIT_LINESMS') {
+    $soap_params['sender'] = $gateway['configuration']['sms_irantc_line'];
+  }
 
   // Instantiate a DrupalSoapClient instance.
   $soap_server = $gateway['configuration']['sms_irantc_soap_server'];
@@ -450,30 +461,22 @@ function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
 
 
 /**
- * Parses the SOAP method call results.
+ * Parses the SOAP method call results, sets messages, etc.
  *
  * @param $soap_method
  *   The name of the SOAP method which have been called.
  * @param $soap_results
  *   Results of the call.
  *
- * @return
- *   An array indicating the result of the send.
+ * @return mixed
+ *   Either an array indicating the result of the send
+ *   as per required by SMSFramework or NULL indicating a
+ *   failure for numeric results (SMS_IRANTC_TYPE_CREDIT),
+ *   or the SOAP result itself in case of no failure.
  */
 function _sms_irantc_soap_parse($soap_method, $soap_results) {
-  // Defining method categories,
-  // to be able to run proper actions.
-  $methods = array(
-    'sender' => array(
-      'SendSMS', 'SendSMS_UseName',
-    ),
-    'credit' => array(
-      'CREDIT_LINESMS', 'COUNT_GETSMS', 'COUNT_SENDSMS',
-    ),
-  );
-
-  // Parsing a sender method results.
-  if (in_array($soap_method, $methods['sender'])) {
+  // Parsing a send typed method results.
+  if (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_SEND) {
     // Got a 8+ character long receipt?
     // So there were a successfull send operation.
     // No need to use drupal's strlen() equivalent here.
@@ -485,15 +488,15 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
   }
 
   // Parsing a credit typed method results.
-  elseif (in_array($soap_method, $methods['credit'])) {
+  elseif (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_CREDIT) {
     switch ($soap_results) {
       case '-1':
         drupal_set_message(t('Invalid username or password.'), 'error', FALSE);
-        break;
+        return NULL;
 
       case '-2':
         drupal_set_message(t('There were a calculation error on remote server. Please try later.'), 'error', FALSE);
-        break;
+        return NULL;
 
       default:
         return $soap_results;
@@ -547,6 +550,36 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
         drupal_set_message(t('The SMS status is unknown.'), 'error', FALSE);
         break;
     }
+  }
+}
+
+
+/**
+ * Helper function to determine a SOAP method type.
+ *
+ * @param $method
+ *   The name of the SOAP method.
+ *
+ * @return
+ *   The method category.
+ */
+function _sms_irantc_method_type($method) {
+  // Defining method categories as arrays
+  // for better readability and easy future edits.
+  $types = array(
+    'SEND' => array(
+      'SendSMS', 'SendSMS_UseName',
+    ),
+    'CREDIT' => array(
+      'CREDIT_LINESMS', 'COUNT_GETSMS', 'COUNT_SENDSMS',
+    ),
+  );
+
+  if (in_array($method, $types['SEND'])) {
+    return SMS_IRANTC_TYPE_SEND;
+  }
+  elseif (in_array($method, $types['CREDIT'])) {
+    return SMS_IRANTC_TYPE_CREDIT;
   }
 }
 
