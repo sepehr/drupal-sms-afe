@@ -480,9 +480,11 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
     // So there were a successfull send operation.
     // No need to use drupal's strlen() equivalent here.
     if (strlen($soap_results) >= 8) {
-      return _sms_irantc_success('Your SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results));
+      // TODO: Make it configurable to show/hide SMS receipt.
+      return _sms_irantc_success('SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results));
     }
     // Otherwise we got a error status code.
+    // TODO: Make it possible to operate in silent mode.
     return _sms_irantc_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results));
   }
 
