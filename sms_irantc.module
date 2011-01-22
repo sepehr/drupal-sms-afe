@@ -31,7 +31,6 @@ function sms_irantc_menu() {
   return $items;
 }
 
-
 /**
  * Implementation of hook_gateway_info().
  */
@@ -47,7 +46,6 @@ function sms_irantc_gateway_info() {
     ),
   );
 }
-
 
 /**
  * Iran.tc SMS gateway administration form.
@@ -161,7 +159,6 @@ function sms_irantc_admin_form($configuration) {
   return $form;
 }
 
-
 /**
  * Validation callback for administration form.
  */
@@ -181,7 +178,6 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
   }
 }
 
-
 /**
  * SMSFramework number formatter callback for Iran.tc gateway.
  *
@@ -196,7 +192,6 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
 function sms_irantc_format_number($number, $options = array()) {
   return _sms_irantc_number_prefix_purge($number);
 }
-
 
 /**
  * SMSFramework number validator callback for Iran.tc gateway.
@@ -215,7 +210,6 @@ function sms_irantc_validate_number(&$number, $options = array()) {
     return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
   }
 }
-
 
 /**
  * Iran.tc SMS send callback.
@@ -254,7 +248,6 @@ function sms_irantc_send($number, $message, $options) {
   return _sms_irantc_soap_parse('SendSMS', $results);
 }
 
-
 /**
  * Menu page callback for traffic relay listener.
  */
@@ -272,14 +265,12 @@ function sms_irantc_incoming_callback() {
   sms_incoming($sender, $message);
 }
 
-
 /**
  * Access callback for traffic relay listener.
  */
 function sms_irantc_incoming_access() {
   return TRUE;
 }
-
 
 /**
  * Helper function to get and theme Iran.tc account info.
@@ -332,7 +323,6 @@ function _sms_irantc_info($type) {
         $soap_parsed_results . ' ' . t('Messages');
   }
 }
-
 
 /**
  * Helper function to call a remote SOAP method.
@@ -400,7 +390,6 @@ function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_optio
   return $soap_results['#return'];
 }
 
-
 /**
  * Helper function to handle the module errors.
  *
@@ -429,7 +418,6 @@ function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
   );
 }
 
-
 /**
  * Helper function to successify a send operation.
  *
@@ -457,7 +445,6 @@ function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
     'variables' => $variables,
   );
 }
-
 
 /**
  * Parses the SOAP method call results, sets messages, etc.
@@ -554,7 +541,6 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
   }
 }
 
-
 /**
  * Helper function to determine a SOAP method type.
  *
@@ -583,7 +569,6 @@ function _sms_irantc_method_type($method) {
     return SMS_IRANTC_TYPE_CREDIT;
   }
 }
-
 
 /**
  * Helper function to remove zero and/or area code prefixes from a mobile number.
