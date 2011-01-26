@@ -374,15 +374,16 @@ function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_optio
   // Checking instantiation errors.
   if ($soap_client['#error']) {
     watchdog('sms_irantc', 'Could not connect to SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
-    return _sms_irantc_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.');
+    return _sms_irantc_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
   }
 
   // Call the SOAP method and check for errors.
   $soap_results = $soap_client['#return']->call($soap_method, $soap_params);
   if ($soap_results['#error']) {
-    return _sms_irantc_error('Failed to send the SMS message. Error: @error', array(
-      '@error' => $soap_results['#return']['faultstring'],
-    ));
+    return _sms_irantc_error('Failed to send the SMS message. Faultstring: @faultstring, Error: @error', array(
+      '@error' => $soap_results['#error'],
+      '@faultstring' => $soap_results['#return']['faultstring'],
+    ), FALSE);
   }
 
   // Return the SOAP call results, if there were no SOAP error.
