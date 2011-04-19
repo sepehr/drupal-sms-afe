@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Support for sending and recieving SMS messages using Iran.tc gateway.
+ * Contains necessary Iran.tc gateway hooks, helpers and callbacks.
  */
 
 /**
@@ -14,7 +14,7 @@ define('SMS_IRANTC_TYPE_SEND', 3);
 define('SMS_IRANTC_TYPE_CREDIT', 4);
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function sms_irantc_menu() {
   $items = array();
@@ -31,7 +31,7 @@ function sms_irantc_menu() {
 }
 
 /**
- * Implementation of hook_gateway_info().
+ * Implements hook_gateway_info().
  */
 function sms_irantc_gateway_info() {
   return array(
