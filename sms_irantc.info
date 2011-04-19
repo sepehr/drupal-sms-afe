@@ -1,8 +1,6 @@
-; $Id$
 name = "Iran.tc Gateway"
 description = "Allows the SMS Framework to use Iran.tc as a gateway."
 core = 6.x
 package = SMS Framework
 dependencies[] = sms
 dependencies[] = soapclient
-

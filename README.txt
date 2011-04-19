@@ -1,5 +1,3 @@
-// $Id$
-
 Description
 ===========
 Iran.tc SMS Gateway enables the smsframework (http://drupal.org/project.smsframework) to use Iran.tc (http://iran.tc/) service as a gateway.
@@ -53,4 +51,3 @@ To prevent this, open the `nusoap.php` file and:
 Author and Maintainer
 =====================
 Sepehr Lajevardi (http://drupal.org/user/668010)
-

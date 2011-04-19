@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -22,4 +21,3 @@ function sms_irantc_install() {
 function sms_irantc_uninstall() {
   variable_del('sms_irantc_settings');
 }
-

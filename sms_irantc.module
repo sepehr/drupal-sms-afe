@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -592,4 +591,3 @@ function _sms_irantc_number_prefix_purge($number) {
 
   return $number;
 }
-
