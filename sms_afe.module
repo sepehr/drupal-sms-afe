@@ -6,6 +6,11 @@
  */
 
 /**
+ * Constant for AFE default gateway address.
+ */
+define('SMS_AFE_DEFAULT_GATEWAY', '‫‪http://afe.ir/WebService/WebService.asmx‬');
+
+/**
  * Implements hook_menu().
  */
 function sms_afe_menu() {
@@ -28,10 +33,10 @@ function sms_afe_menu() {
 function sms_afe_gateway_info() {
   return array(
     'irantc' => array(
-      'name' => 'Iran.tc',
+      'name' => 'AFE',
       'send' => 'sms_afe_send',
       'configure form' => 'sms_afe_admin_form',
-      'format number' => 'sms_afe_format_number',
+      'format number'  => 'sms_afe_format_number',
       'validate number' => 'sms_afe_validate_number',
       'receive' => TRUE,
     ),
@@ -39,7 +44,7 @@ function sms_afe_gateway_info() {
 }
 
 /**
- * Iran.tc SMS gateway administration form.
+ * AFE SMS gateway administration form.
  *
  * @param $configuration
  *   SMS gateway configuration.
@@ -49,26 +54,27 @@ function sms_afe_gateway_info() {
 function sms_afe_admin_form($configuration) {
   $form = array();
 
+  // Line number:
   $form['sms_afe_line'] = array(
     '#type' => 'textfield',
     '#title' => t('Line Number'),
-    '#description' => t('The number of your Iran.tc phone line.'),
+    '#description' => t('The number of your AFE phone line.'),
     '#default_value' => $configuration['sms_afe_line'],
     '#required' => TRUE,
   );
-
+  // AFE username:
   $form['sms_afe_username'] = array(
     '#type' => 'textfield',
     '#title' => t('Username'),
-    '#description' => t('The username of your Iran.tc account.'),
+    '#description' => t('The username of your AFE account.'),
     '#default_value' => $configuration['sms_afe_username'],
     '#required' => TRUE,
   );
-
+  // AFE password:
   $form['sms_afe_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Password'),
-    '#description' => t('The password of your Iran.tc account.'),
+    '#description' => t('The password of your AFE account.'),
     '#default_value' => $configuration['sms_afe_password'],
     '#required' => TRUE,
   );
@@ -80,26 +86,19 @@ function sms_afe_admin_form($configuration) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-
+  // SOAP server endpoint address:
   $form['sms_afe_outgoing_settings']['sms_afe_soap_server'] = array(
     '#type' => 'textfield',
     '#title' => t('SOAP Server Endpoint'),
     '#description' => t('Do not change the default, Unless you have a different endpoint in your technical documentation.'),
-    '#default_value' => $configuration['sms_afe_soap_server'] ? $configuration['sms_afe_soap_server'] : 'http://iran.tc/WebService/Service.php',
+    '#default_value' => $configuration['sms_afe_soap_server'] ? $configuration['sms_afe_soap_server'] : SMS_AFE_DEFAULT_GATEWAY,
     '#required' => TRUE,
   );
 
-  $form['sms_afe_outgoing_settings']['sms_afe_use_line_name'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use the line name instead of its number.'),
-    '#description' => t('If checked, SMS messages will be sent via your Line Name not the number. Note that you need to purchase a line name first.'),
-    '#default_value' => $configuration['sms_afe_use_line_name'],
-    '#return_value' => TRUE,
-  );
-
   // If API credentials is already set,
-  // provide more configuration options and account information.
+  // also provide incoming messages configuration.
   if ($configuration['sms_afe_username'] && $configuration['sms_afe_password']) {
+    global $base_root;
     // Incoming SMS Settings fieldset.
     $form['sms_afe_incoming_settings'] = array(
       '#type' => 'fieldset',
@@ -107,43 +106,13 @@ function sms_afe_admin_form($configuration) {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
-
-    global $base_root;
+    // Traffic relay gateway address:
     $form['sms_afe_incoming_settings']['sms_afe_receiver'] = array(
       '#type' => 'textfield',
       '#title' => t('Traffic Relay Gateway'),
-      '#description' => t("This is where we listen for incoming SMS messages. You need to copy & paste this URL into your http://iran.tc/ panel's settings."),
-      '#value' => $base_root . url('sms/irantc/receiver'),
+      '#description' => t("This is where we listen for incoming SMS messages. You need to copy & paste this URL into your http://afe.ir/ panel's settings."),
+      '#value' => $base_root . url('sms/afe/receiver'),
       '#disabled' => TRUE,
-    );
-
-    // Account Information fieldset.
-    $form['sms_afe_info'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Account Information'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-    );
-
-    $form['sms_afe_info']['sms_afe_info_credit'] = array(
-      '#type' => 'item',
-      '#title' => t('Account Balance'),
-      '#description' => t('You Iran.tc SMS balance.'),
-      '#value' => _sms_afe_info('credit'),
-    );
-
-    $form['sms_afe_info']['sms_afe_info_sent_count'] = array(
-      '#type' => 'item',
-      '#title' => t('Sent Count'),
-      '#description' => t('The total number of SMS messages sent from your Iran.tc account.'),
-      '#value' => _sms_afe_info('sent_count'),
-    );
-
-    $form['sms_afe_info']['sms_afe_info_received_count'] = array(
-      '#type' => 'item',
-      '#title' => t('Received Count'),
-      '#description' => t('The total number of SMS messages received into your Iran.tc account.'),
-      '#value' => _sms_afe_info('received_total_count'),
     );
   }
 
@@ -165,12 +134,12 @@ function sms_afe_admin_form_validate($form, &$form_state) {
   }
 
   if ($form_state['values']['sms_afe_use_line_name']) {
-    drupal_set_message(t('You have chosen to use a <em>Line Name</em> instead of your <em>Line Number</em> for outgoing messages. Please make sure that you have a Line Name bundled with your account at <a href="!link">Iran.tc control panel</a> or you get errors.', array('!link' => 'http://iran.tc/')), 'warning');
+    drupal_set_message(t('You have chosen to use a <em>Line Name</em> instead of your <em>Line Number</em> for outgoing messages. Please make sure that you have a Line Name bundled with your account at <a href="!link">AFE control panel</a> or you get errors.', array('!link' => 'http://AFE/')), 'warning');
   }
 }
 
 /**
- * SMSFramework number formatter callback for Iran.tc gateway.
+ * SMSFramework number formatter callback for AFE gateway.
  *
  * @param $number
  *   The number to be pretty formatted.
@@ -185,7 +154,7 @@ function sms_afe_format_number($number, $options = array()) {
 }
 
 /**
- * SMSFramework number validator callback for Iran.tc gateway.
+ * SMSFramework number validator callback for AFE gateway.
  *
  * @param $number
  *   The number to be validated.
@@ -203,7 +172,7 @@ function sms_afe_validate_number(&$number, $options = array()) {
 }
 
 /**
- * Iran.tc SMS send callback.
+ * AFE SMS send callback.
  *
  * @param $number
  *   Receiver line number.
@@ -216,7 +185,7 @@ function sms_afe_validate_number(&$number, $options = array()) {
  *   An array outputed from _sms_afe_soap_parse() helper.
  */
 function sms_afe_send($number, $message, $options) {
-  // The devs at Iran.tc, they requested an associative array,
+  // The devs at AFE, they requested an associative array,
   // But they process that as an ordinary one! Long live guys!
   $results = _sms_afe_soap_call('SendSMS', array(
     'username' => '',
@@ -264,7 +233,7 @@ function sms_afe_incoming_access() {
 }
 
 /**
- * Helper function to get and theme Iran.tc account info.
+ * Helper function to get and theme AFE account info.
  *
  * @param $type
  *   Type of needed information to get.
