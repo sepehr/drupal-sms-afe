@@ -8,7 +8,7 @@
 /**
  * Constant for AFE default gateway address.
  */
-define('SMS_AFE_DEFAULT_GATEWAY', '‫‪http://afe.ir/WebService/WebService.asmx‬');
+define('SMS_AFE_DEFAULT_GATEWAY', 'http://www.afe.ir/webservice/webservice.asmx');
 
 /**
  * Implements hook_menu().
@@ -41,6 +41,30 @@ function sms_afe_gateway_info() {
       'receive' => TRUE,
     ),
   );
+}
+
+/**
+ * Access callback for traffic relay listener.
+ */
+function sms_afe_incoming_access() {
+  return TRUE;
+}
+
+/**
+ * Menu callback for traffic relay listener.
+ */
+function sms_afe_incoming_callback() {
+  $receiver = check_plain($_REQUEST['to']);
+  $message = check_plain($_REQUEST['text']);
+  $sender = _sms_afe_number_prefix_purge(check_plain($_REQUEST['from']));
+
+  watchdog('sms_afe', 'Received SMS message from %sender: %message', array(
+    '%sender' => $sender,
+    '%message' => $message,
+  ));
+
+  // Notify smsframework.
+  sms_incoming($sender, $message);
 }
 
 /**
@@ -180,14 +204,14 @@ function sms_afe_validate_number(&$number, $options = array()) {
  *   An array outputed from _sms_afe_soap_parse() helper.
  */
 function sms_afe_send($number, $message, $options) {
-  // The devs at AFE, they requested an associative array,
-  // But they process that as an ordinary one! Long live guys!
-  $results = _sms_afe_soap_call('SendSMS', array(
-    'username' => '',
-    'password' => '',
-    'reciever' => $number, // Also a typo!
-    'text' => $message,
-    'sender' => '',
+  // Execute remote SOAP method.
+  $results = _sms_afe_soap_call('SendMessage', array(
+    'Username' => '',
+    'Password' => '',
+    'Number'  => '',
+    'Mobile'  => $number,
+    'Message' => $message,
+    'Type' => '1',
   ));
 
   // Return the error array, if there were any.
@@ -198,85 +222,9 @@ function sms_afe_send($number, $message, $options) {
     return $results;
   }
 
-  // If we're here, there were no error in the SOAP call and results.
-  // Now, we have to check the SOAP operation status code.
+  // If we're here, there were no error in the SOAP call and
+  // its results. Now, we have to check the SOAP operation status code.
   return _sms_afe_soap_parse('SendSMS', $results);
-}
-
-/**
- * Menu page callback for traffic relay listener.
- */
-function sms_afe_incoming_callback() {
-  $receiver = check_plain($_REQUEST['to']);
-  $message = check_plain($_REQUEST['text']);
-  $sender = _sms_afe_number_prefix_purge(check_plain($_REQUEST['from']));
-
-  watchdog('sms_afe', 'Received SMS message from %sender: %message', array(
-    '%sender' => $sender,
-    '%message' => $message,
-  ));
-
-  // Notify smsframework.
-  sms_incoming($sender, $message);
-}
-
-/**
- * Access callback for traffic relay listener.
- */
-function sms_afe_incoming_access() {
-  return TRUE;
-}
-
-/**
- * Helper function to get and theme AFE account info.
- *
- * @param $type
- *   Type of needed information to get.
- *
- * @return
- *   Either the operation error or results.
- */
-function _sms_afe_info($type) {
-  $soap_params = array(
-    'username' => '',
-    'password' => '',
-  );
-
-  switch ($type) {
-    case 'credit':
-      $soap_results = _sms_afe_soap_call('CREDIT_LINESMS');
-      $soap_parsed_results = _sms_afe_soap_parse('CREDIT_LINESMS', $soap_results);
-
-      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
-        t('Could not get the account balance.') :
-        $soap_parsed_results . ' ' . t('IRR.');
-
-    case 'received_new_count':
-      $soap_params['method'] = sms_afe_METHOD_NEW;
-      $soap_results = _sms_afe_soap_call('COUNT_GETSMS', $soap_params);
-      $soap_parsed_results = _sms_afe_soap_parse('COUNT_GETSMS', $soap_results);
-
-      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
-        t('Could not get the account new messages info.') :
-        $soap_parsed_results . ' ' . t('Messages');
-
-    case 'received_total_count':
-      $soap_params['method'] = sms_afe_METHOD_TOTAL;
-      $soap_results = _sms_afe_soap_call('COUNT_GETSMS', $soap_params);
-      $soap_parsed_results = _sms_afe_soap_parse('COUNT_GETSMS', $soap_results);
-
-      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
-        t('Could not get the account total messages info.') :
-        $soap_parsed_results . ' ' . t('Messages');
-
-    case 'sent_count':
-      $soap_results = _sms_afe_soap_call('COUNT_SENDSMS');
-      $soap_parsed_results = _sms_afe_soap_parse('COUNT_SENDSMS', $soap_results);
-
-      return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
-        t('Could not get the account sent messages info.') :
-        $soap_parsed_results . ' ' . t('Messages');
-  }
 }
 
 /**
@@ -293,7 +241,7 @@ function _sms_afe_info($type) {
  *   SOAP call results or an error array.
  */
 function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options = NULL) {
-  // Settings default SOAP options, if not yet set.
+  // Set default SOAP options, if not yet set.
   if (is_null($soap_options)) {
     $soap_options = array(
       'style' => 'rpc',
@@ -302,25 +250,11 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
   }
 
   // Getting gateway configuration.
-  $gateway = sms_gateways('gateway', 'irantc');
-
-  // Determine which method has been configured to call.
-  // Redicolously if sending a message, the 'sender' element
-  // should be exactly at this postion in $soap_params array.
-  if (_sms_afe_method_type($soap_method) == sms_afe_TYPE_SEND) {
-    $soap_params['sender'] = $gateway['configuration']['sms_afe_line'];
-    $soap_method = $gateway['configuration']['sms_afe_use_line_name'] ? '‫‪SendSMS_UseName‬‬' : 'SendSMS';
-  }
+  $gateway = sms_gateways('gateway', 'afe');
 
   // Filling necessary SOAP call auth parameters.
-  $soap_params['username'] = $gateway['configuration']['sms_afe_username'];
-  $soap_params['password'] = $gateway['configuration']['sms_afe_password'];
-
-  // Also add sender (exactly at this position) if
-  // we're calling service CREDIT_LINESMS method.
-  if ($soap_method == 'CREDIT_LINESMS') {
-    $soap_params['sender'] = $gateway['configuration']['sms_afe_line'];
-  }
+  $soap_params['Username'] = $gateway['configuration']['sms_afe_username'];
+  $soap_params['Password'] = $gateway['configuration']['sms_afe_password'];
 
   // Instantiate a DrupalSoapClient instance.
   $soap_server = $gateway['configuration']['sms_afe_soap_server'];
@@ -328,12 +262,14 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
 
   // Checking instantiation errors.
   if ($soap_client['#error']) {
-    watchdog('sms_afe', 'Could not connect to SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
-    return _sms_afe_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
+    // Log errors.
+    watchdog('sms_afe', 'Could not connect to AFE SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
+    return _sms_afe_error('Could not connect to AFE SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
   }
 
-  // Call the SOAP method and check for errors.
+  // Call the SOAP method.
   $soap_results = $soap_client['#return']->call($soap_method, $soap_params);
+  // And check for errors.
   if ($soap_results['#error']) {
     return _sms_afe_error('Failed to send the SMS message. Faultstring: @faultstring, Error: @error', array(
       '@error' => $soap_results['#error'],
@@ -419,113 +355,7 @@ function _sms_afe_success($message, $variables = array(), $display = TRUE) {
  *   or the SOAP result itself in case of no failure.
  */
 function _sms_afe_soap_parse($soap_method, $soap_results) {
-  // Parsing a send typed method results.
-  if (_sms_afe_method_type($soap_method) == sms_afe_TYPE_SEND) {
-    // Got a 8+ character length receipt?
-    // So there were a successfull send operation.
-    // No need to use drupal's strlen() equivalent here.
-    if (strlen($soap_results) >= 8) {
-      // TODO: Make it configurable to show/hide SMS receipt.
-      return _sms_afe_success('SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results), FALSE);
-    }
-    // Otherwise we got a error status code.
-    // TODO: Make it possible to operate in silent mode.
-    return _sms_afe_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results), FALSE);
-  }
-
-  // Parsing a credit typed method results.
-  elseif (_sms_afe_method_type($soap_method) == sms_afe_TYPE_CREDIT) {
-    switch ($soap_results) {
-      case '-1':
-        drupal_set_message(t('Invalid username or password.'), 'error', FALSE);
-        return NULL;
-
-      case '-2':
-        drupal_set_message(t('There were a calculation error on remote server. Please try later.'), 'error', FALSE);
-        return NULL;
-
-      default:
-        return $soap_results;
-    }
-  }
-
-  // Parsing a SMS Status method results.
-  elseif ($soap_method == 'StatusSMS') {
-    switch ($soap_results) {
-      case '-1':
-        drupal_set_message(t('Invalid username or password.'), 'error', FALSE);
-        break;
-
-      case '-2':
-        drupal_set_message(t('Operation error.'), 'error', FALSE);
-        break;
-
-      case '-4':
-        drupal_set_message(t('Failed to connect to IRTCI.'), 'error', FALSE);
-        break;
-
-      case '-5':
-        drupal_set_message(t('There were an error while connecting to IRTCI gateway.'), 'error', FALSE);
-        break;
-
-      case '0':
-        drupal_set_message(t('The SMS message has been successfully sent to IRTCI.'));
-        break;
-
-      case '1':
-        drupal_set_message(t('The SMS message has been successfully sent to the recipient.'));
-        break;
-
-      case '2':
-        drupal_set_message(t('The SMS message has been failed to be sent to the recipient.'), 'warning');
-        break;
-
-      case '4':
-        drupal_set_message(t('The SMS message is already in the IRTCI sending queue.'), 'warning');
-        break;
-
-      case '8':
-        drupal_set_message(t('The SMS message has been successfully arrived to IRTCI.'));
-        break;
-
-      case '16':
-        drupal_set_message(t('The SMS message has not yet arrived to IRTCI.'), 'warning');
-        break;
-
-      default:
-        drupal_set_message(t('The SMS status is unknown.'), 'error', FALSE);
-        break;
-    }
-  }
-}
-
-/**
- * Helper function to determine a SOAP method type.
- *
- * @param $method
- *   The name of the SOAP method.
- *
- * @return
- *   The method category.
- */
-function _sms_afe_method_type($method) {
-  // Defining method categories as arrays
-  // for better readability and easy future edits.
-  $types = array(
-    'SEND' => array(
-      'SendSMS', 'SendSMS_UseName',
-    ),
-    'CREDIT' => array(
-      'CREDIT_LINESMS', 'COUNT_GETSMS', 'COUNT_SENDSMS',
-    ),
-  );
-
-  if (in_array($method, $types['SEND'])) {
-    return sms_afe_TYPE_SEND;
-  }
-  elseif (in_array($method, $types['CREDIT'])) {
-    return sms_afe_TYPE_CREDIT;
-  }
+  dpm($results);
 }
 
 /**
