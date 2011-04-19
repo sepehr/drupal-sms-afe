@@ -2,15 +2,15 @@
 
 /**
  * @file
- * Contains Iran.tc SMS Gateway un/installtion hooks.
+ * Contains AFE SMS Gateway un/installtion hooks.
  */
 
 /**
  * Implements hook_install().
  */
-function sms_irantc_install() {
-  drupal_set_message(st('Iran.tc SMS Gateway has been installed. Please set your settings in <a href="!link">configuration page</a>.',
-    array('!link' => url('admin/smsframework/gateways/irantc'))
+function sms_afe_install() {
+  drupal_set_message(st('AFE SMS Gateway has been installed. Please set your settings in <a href="!link">configuration page</a>.',
+    array('!link' => url('admin/smsframework/gateways/afe'))
   ));
 }
 
@@ -18,6 +18,6 @@ function sms_irantc_install() {
 /**
  * Implements hook_uninstall().
  */
-function sms_irantc_uninstall() {
-  variable_del('sms_irantc_settings');
+function sms_afe_uninstall() {
+  variable_del('sms_afe_settings');
 }
