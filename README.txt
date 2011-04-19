@@ -1,10 +1,10 @@
 Description
 ===========
-Iran.tc SMS Gateway enables the smsframework (http://drupal.org/project.smsframework) to use Iran.tc (http://iran.tc/) service as a gateway.
+AFE SMS Gateway enables the smsframework (http://drupal.org/project.smsframework) to use AFE (http://afe.ir/) service as a gateway.
 
 Requirements
 ============
-- A valid line number, username and password provided by Iran.tc.
+- A valid line number, username and password provided by AFE.
 
 Dependencies
 ============
