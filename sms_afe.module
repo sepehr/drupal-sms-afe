@@ -8,14 +8,14 @@
 /**
  * Implements hook_menu().
  */
-function sms_irantc_menu() {
+function sms_afe_menu() {
   $items = array();
 
-  $items['sms/irantc/receiver'] = array(
+  $items['sms/afe/receiver'] = array(
     'title' => 'Incoming SMS Messages Gateway',
-    'description' => 'Incoming SMS messages form Iran.tc gateway',
-    'page callback' => 'sms_irantc_incoming_callback',
-    'access callback' => 'sms_irantc_incoming_access',
+    'description' => 'Incoming SMS messages form AFE gateway',
+    'page callback' => 'sms_afe_incoming_callback',
+    'access callback' => 'sms_afe_incoming_access',
     'type' => MENU_CALLBACK,
   );
 
@@ -25,14 +25,14 @@ function sms_irantc_menu() {
 /**
  * Implements hook_gateway_info().
  */
-function sms_irantc_gateway_info() {
+function sms_afe_gateway_info() {
   return array(
     'irantc' => array(
       'name' => 'Iran.tc',
-      'send' => 'sms_irantc_send',
-      'configure form' => 'sms_irantc_admin_form',
-      'format number' => 'sms_irantc_format_number',
-      'validate number' => 'sms_irantc_validate_number',
+      'send' => 'sms_afe_send',
+      'configure form' => 'sms_afe_admin_form',
+      'format number' => 'sms_afe_format_number',
+      'validate number' => 'sms_afe_validate_number',
       'receive' => TRUE,
     ),
   );
@@ -46,62 +46,62 @@ function sms_irantc_gateway_info() {
  *
  * @ingroup forms
  */
-function sms_irantc_admin_form($configuration) {
+function sms_afe_admin_form($configuration) {
   $form = array();
 
-  $form['sms_irantc_line'] = array(
+  $form['sms_afe_line'] = array(
     '#type' => 'textfield',
     '#title' => t('Line Number'),
     '#description' => t('The number of your Iran.tc phone line.'),
-    '#default_value' => $configuration['sms_irantc_line'],
+    '#default_value' => $configuration['sms_afe_line'],
     '#required' => TRUE,
   );
 
-  $form['sms_irantc_username'] = array(
+  $form['sms_afe_username'] = array(
     '#type' => 'textfield',
     '#title' => t('Username'),
     '#description' => t('The username of your Iran.tc account.'),
-    '#default_value' => $configuration['sms_irantc_username'],
+    '#default_value' => $configuration['sms_afe_username'],
     '#required' => TRUE,
   );
 
-  $form['sms_irantc_password'] = array(
+  $form['sms_afe_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Password'),
     '#description' => t('The password of your Iran.tc account.'),
-    '#default_value' => $configuration['sms_irantc_password'],
+    '#default_value' => $configuration['sms_afe_password'],
     '#required' => TRUE,
   );
 
   // Outgoing SMS Settings fieldset.
-  $form['sms_irantc_outgoing_settings'] = array(
+  $form['sms_afe_outgoing_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Outgoing SMS Settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
 
-  $form['sms_irantc_outgoing_settings']['sms_irantc_soap_server'] = array(
+  $form['sms_afe_outgoing_settings']['sms_afe_soap_server'] = array(
     '#type' => 'textfield',
     '#title' => t('SOAP Server Endpoint'),
     '#description' => t('Do not change the default, Unless you have a different endpoint in your technical documentation.'),
-    '#default_value' => $configuration['sms_irantc_soap_server'] ? $configuration['sms_irantc_soap_server'] : 'http://iran.tc/WebService/Service.php',
+    '#default_value' => $configuration['sms_afe_soap_server'] ? $configuration['sms_afe_soap_server'] : 'http://iran.tc/WebService/Service.php',
     '#required' => TRUE,
   );
 
-  $form['sms_irantc_outgoing_settings']['sms_irantc_use_line_name'] = array(
+  $form['sms_afe_outgoing_settings']['sms_afe_use_line_name'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use the line name instead of its number.'),
     '#description' => t('If checked, SMS messages will be sent via your Line Name not the number. Note that you need to purchase a line name first.'),
-    '#default_value' => $configuration['sms_irantc_use_line_name'],
+    '#default_value' => $configuration['sms_afe_use_line_name'],
     '#return_value' => TRUE,
   );
 
   // If API credentials is already set,
   // provide more configuration options and account information.
-  if ($configuration['sms_irantc_username'] && $configuration['sms_irantc_password']) {
+  if ($configuration['sms_afe_username'] && $configuration['sms_afe_password']) {
     // Incoming SMS Settings fieldset.
-    $form['sms_irantc_incoming_settings'] = array(
+    $form['sms_afe_incoming_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Incoming SMS Settings'),
       '#collapsible' => TRUE,
@@ -109,7 +109,7 @@ function sms_irantc_admin_form($configuration) {
     );
 
     global $base_root;
-    $form['sms_irantc_incoming_settings']['sms_irantc_receiver'] = array(
+    $form['sms_afe_incoming_settings']['sms_afe_receiver'] = array(
       '#type' => 'textfield',
       '#title' => t('Traffic Relay Gateway'),
       '#description' => t("This is where we listen for incoming SMS messages. You need to copy & paste this URL into your http://iran.tc/ panel's settings."),
@@ -118,32 +118,32 @@ function sms_irantc_admin_form($configuration) {
     );
 
     // Account Information fieldset.
-    $form['sms_irantc_info'] = array(
+    $form['sms_afe_info'] = array(
       '#type' => 'fieldset',
       '#title' => t('Account Information'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
 
-    $form['sms_irantc_info']['sms_irantc_info_credit'] = array(
+    $form['sms_afe_info']['sms_afe_info_credit'] = array(
       '#type' => 'item',
       '#title' => t('Account Balance'),
       '#description' => t('You Iran.tc SMS balance.'),
-      '#value' => _sms_irantc_info('credit'),
+      '#value' => _sms_afe_info('credit'),
     );
 
-    $form['sms_irantc_info']['sms_irantc_info_sent_count'] = array(
+    $form['sms_afe_info']['sms_afe_info_sent_count'] = array(
       '#type' => 'item',
       '#title' => t('Sent Count'),
       '#description' => t('The total number of SMS messages sent from your Iran.tc account.'),
-      '#value' => _sms_irantc_info('sent_count'),
+      '#value' => _sms_afe_info('sent_count'),
     );
 
-    $form['sms_irantc_info']['sms_irantc_info_received_count'] = array(
+    $form['sms_afe_info']['sms_afe_info_received_count'] = array(
       '#type' => 'item',
       '#title' => t('Received Count'),
       '#description' => t('The total number of SMS messages received into your Iran.tc account.'),
-      '#value' => _sms_irantc_info('received_total_count'),
+      '#value' => _sms_afe_info('received_total_count'),
     );
   }
 
@@ -153,18 +153,18 @@ function sms_irantc_admin_form($configuration) {
 /**
  * Validation callback for administration form.
  */
-function sms_irantc_admin_form_validate($form, &$form_state) {
-  if (!ctype_digit($form_state['values']['sms_irantc_line'])) {
-    form_set_error('sms_irantc_line', t('SMS line number needs to be a numeric value.'));
+function sms_afe_admin_form_validate($form, &$form_state) {
+  if (!ctype_digit($form_state['values']['sms_afe_line'])) {
+    form_set_error('sms_afe_line', t('SMS line number needs to be a numeric value.'));
     return;
   }
 
-  if (!valid_url($form_state['values']['sms_irantc_soap_server'], TRUE)) {
-    form_set_error('sms_irantc_soap_server', t('SOAP Server Endpoint address needs to be a valid URL.'));
+  if (!valid_url($form_state['values']['sms_afe_soap_server'], TRUE)) {
+    form_set_error('sms_afe_soap_server', t('SOAP Server Endpoint address needs to be a valid URL.'));
     return;
   }
 
-  if ($form_state['values']['sms_irantc_use_line_name']) {
+  if ($form_state['values']['sms_afe_use_line_name']) {
     drupal_set_message(t('You have chosen to use a <em>Line Name</em> instead of your <em>Line Number</em> for outgoing messages. Please make sure that you have a Line Name bundled with your account at <a href="!link">Iran.tc control panel</a> or you get errors.', array('!link' => 'http://iran.tc/')), 'warning');
   }
 }
@@ -180,8 +180,8 @@ function sms_irantc_admin_form_validate($form, &$form_state) {
  * @return
  *   Formatted number.
  */
-function sms_irantc_format_number($number, $options = array()) {
-  return _sms_irantc_number_prefix_purge($number);
+function sms_afe_format_number($number, $options = array()) {
+  return _sms_afe_number_prefix_purge($number);
 }
 
 /**
@@ -195,8 +195,8 @@ function sms_irantc_format_number($number, $options = array()) {
  * @return
  *   Error if could not validate.
  */
-function sms_irantc_validate_number(&$number, $options = array()) {
-  $number = _sms_irantc_number_prefix_purge($number);
+function sms_afe_validate_number(&$number, $options = array()) {
+  $number = _sms_afe_number_prefix_purge($number);
   if (drupal_strlen($number) != 10) {
     return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
   }
@@ -213,12 +213,12 @@ function sms_irantc_validate_number(&$number, $options = array()) {
  *   An array of additional properties as defined in gateway module's send form.
  *
  * @return
- *   An array outputed from _sms_irantc_soap_parse() helper.
+ *   An array outputed from _sms_afe_soap_parse() helper.
  */
-function sms_irantc_send($number, $message, $options) {
+function sms_afe_send($number, $message, $options) {
   // The devs at Iran.tc, they requested an associative array,
   // But they process that as an ordinary one! Long live guys!
-  $results = _sms_irantc_soap_call('SendSMS', array(
+  $results = _sms_afe_soap_call('SendSMS', array(
     'username' => '',
     'password' => '',
     'reciever' => $number, // Also a typo!
@@ -236,18 +236,18 @@ function sms_irantc_send($number, $message, $options) {
 
   // If we're here, there were no error in the SOAP call and results.
   // Now, we have to check the SOAP operation status code.
-  return _sms_irantc_soap_parse('SendSMS', $results);
+  return _sms_afe_soap_parse('SendSMS', $results);
 }
 
 /**
  * Menu page callback for traffic relay listener.
  */
-function sms_irantc_incoming_callback() {
+function sms_afe_incoming_callback() {
   $receiver = check_plain($_REQUEST['to']);
   $message = check_plain($_REQUEST['text']);
-  $sender = _sms_irantc_number_prefix_purge(check_plain($_REQUEST['from']));
+  $sender = _sms_afe_number_prefix_purge(check_plain($_REQUEST['from']));
 
-  watchdog('sms_irantc', 'Received SMS message from %sender: %message', array(
+  watchdog('sms_afe', 'Received SMS message from %sender: %message', array(
     '%sender' => $sender,
     '%message' => $message,
   ));
@@ -259,7 +259,7 @@ function sms_irantc_incoming_callback() {
 /**
  * Access callback for traffic relay listener.
  */
-function sms_irantc_incoming_access() {
+function sms_afe_incoming_access() {
   return TRUE;
 }
 
@@ -272,7 +272,7 @@ function sms_irantc_incoming_access() {
  * @return
  *   Either the operation error or results.
  */
-function _sms_irantc_info($type) {
+function _sms_afe_info($type) {
   $soap_params = array(
     'username' => '',
     'password' => '',
@@ -280,34 +280,34 @@ function _sms_irantc_info($type) {
 
   switch ($type) {
     case 'credit':
-      $soap_results = _sms_irantc_soap_call('CREDIT_LINESMS');
-      $soap_parsed_results = _sms_irantc_soap_parse('CREDIT_LINESMS', $soap_results);
+      $soap_results = _sms_afe_soap_call('CREDIT_LINESMS');
+      $soap_parsed_results = _sms_afe_soap_parse('CREDIT_LINESMS', $soap_results);
 
       return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
         t('Could not get the account balance.') :
         $soap_parsed_results . ' ' . t('IRR.');
 
     case 'received_new_count':
-      $soap_params['method'] = SMS_IRANTC_METHOD_NEW;
-      $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+      $soap_params['method'] = sms_afe_METHOD_NEW;
+      $soap_results = _sms_afe_soap_call('COUNT_GETSMS', $soap_params);
+      $soap_parsed_results = _sms_afe_soap_parse('COUNT_GETSMS', $soap_results);
 
       return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
         t('Could not get the account new messages info.') :
         $soap_parsed_results . ' ' . t('Messages');
 
     case 'received_total_count':
-      $soap_params['method'] = SMS_IRANTC_METHOD_TOTAL;
-      $soap_results = _sms_irantc_soap_call('COUNT_GETSMS', $soap_params);
-      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_GETSMS', $soap_results);
+      $soap_params['method'] = sms_afe_METHOD_TOTAL;
+      $soap_results = _sms_afe_soap_call('COUNT_GETSMS', $soap_params);
+      $soap_parsed_results = _sms_afe_soap_parse('COUNT_GETSMS', $soap_results);
 
       return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
         t('Could not get the account total messages info.') :
         $soap_parsed_results . ' ' . t('Messages');
 
     case 'sent_count':
-      $soap_results = _sms_irantc_soap_call('COUNT_SENDSMS');
-      $soap_parsed_results = _sms_irantc_soap_parse('COUNT_SENDSMS', $soap_results);
+      $soap_results = _sms_afe_soap_call('COUNT_SENDSMS');
+      $soap_parsed_results = _sms_afe_soap_parse('COUNT_SENDSMS', $soap_results);
 
       return ($soap_results['status'] === FALSE || is_null($soap_parsed_results)) ?
         t('Could not get the account sent messages info.') :
@@ -328,7 +328,7 @@ function _sms_irantc_info($type) {
  * @return
  *   SOAP call results or an error array.
  */
-function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_options = NULL) {
+function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options = NULL) {
   // Settings default SOAP options, if not yet set.
   if (is_null($soap_options)) {
     $soap_options = array(
@@ -343,35 +343,35 @@ function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_optio
   // Determine which method has been configured to call.
   // Redicolously if sending a message, the 'sender' element
   // should be exactly at this postion in $soap_params array.
-  if (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_SEND) {
-    $soap_params['sender'] = $gateway['configuration']['sms_irantc_line'];
-    $soap_method = $gateway['configuration']['sms_irantc_use_line_name'] ? '‫‪SendSMS_UseName‬‬' : 'SendSMS';
+  if (_sms_afe_method_type($soap_method) == sms_afe_TYPE_SEND) {
+    $soap_params['sender'] = $gateway['configuration']['sms_afe_line'];
+    $soap_method = $gateway['configuration']['sms_afe_use_line_name'] ? '‫‪SendSMS_UseName‬‬' : 'SendSMS';
   }
 
   // Filling necessary SOAP call auth parameters.
-  $soap_params['username'] = $gateway['configuration']['sms_irantc_username'];
-  $soap_params['password'] = $gateway['configuration']['sms_irantc_password'];
+  $soap_params['username'] = $gateway['configuration']['sms_afe_username'];
+  $soap_params['password'] = $gateway['configuration']['sms_afe_password'];
 
   // Also add sender (exactly at this position) if
   // we're calling service CREDIT_LINESMS method.
   if ($soap_method == 'CREDIT_LINESMS') {
-    $soap_params['sender'] = $gateway['configuration']['sms_irantc_line'];
+    $soap_params['sender'] = $gateway['configuration']['sms_afe_line'];
   }
 
   // Instantiate a DrupalSoapClient instance.
-  $soap_server = $gateway['configuration']['sms_irantc_soap_server'];
+  $soap_server = $gateway['configuration']['sms_afe_soap_server'];
   $soap_client = soapclient_init_client($soap_server, FALSE, $soap_options);
 
   // Checking instantiation errors.
   if ($soap_client['#error']) {
-    watchdog('sms_irantc', 'Could not connect to SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
-    return _sms_irantc_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
+    watchdog('sms_afe', 'Could not connect to SMS gateway webservice. Details: %error', array('%error' => $soap_client['#error']), WATCHDOG_ERROR);
+    return _sms_afe_error('Could not connect to SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
   }
 
   // Call the SOAP method and check for errors.
   $soap_results = $soap_client['#return']->call($soap_method, $soap_params);
   if ($soap_results['#error']) {
-    return _sms_irantc_error('Failed to send the SMS message. Faultstring: @faultstring, Error: @error', array(
+    return _sms_afe_error('Failed to send the SMS message. Faultstring: @faultstring, Error: @error', array(
       '@error' => $soap_results['#error'],
       '@faultstring' => $soap_results['#return']['faultstring'],
     ), FALSE);
@@ -398,12 +398,12 @@ function _sms_irantc_soap_call($soap_method, $soap_params = array(), $soap_optio
  * @return
  *   The said error array.
  */
-function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
+function _sms_afe_error($message, $variables = array(), $display = TRUE) {
   if ($display) {
     drupal_set_message(t($message, $variables), 'error', FALSE);
   }
 
-  watchdog('sms_irantc', $message, $variables, WATCHDOG_ERROR);
+  watchdog('sms_afe', $message, $variables, WATCHDOG_ERROR);
   return array(
     'status' => FALSE,
     'message' => $message,
@@ -427,12 +427,12 @@ function _sms_irantc_error($message, $variables = array(), $display = TRUE) {
  * @return
  *   The said error array.
  */
-function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
+function _sms_afe_success($message, $variables = array(), $display = TRUE) {
   if ($display) {
     drupal_set_message(t($message, $variables));
   }
 
-  watchdog('sms_irantc', $message, $variables, WATCHDOG_INFO);
+  watchdog('sms_afe', $message, $variables, WATCHDOG_INFO);
   return array(
     'status' => TRUE,
     'message' => $message,
@@ -451,26 +451,26 @@ function _sms_irantc_success($message, $variables = array(), $display = TRUE) {
  * @return mixed
  *   Either an array indicating the result of the send
  *   as per required by SMSFramework or NULL indicating a
- *   failure for numeric results (SMS_IRANTC_TYPE_CREDIT),
+ *   failure for numeric results (sms_afe_TYPE_CREDIT),
  *   or the SOAP result itself in case of no failure.
  */
-function _sms_irantc_soap_parse($soap_method, $soap_results) {
+function _sms_afe_soap_parse($soap_method, $soap_results) {
   // Parsing a send typed method results.
-  if (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_SEND) {
+  if (_sms_afe_method_type($soap_method) == sms_afe_TYPE_SEND) {
     // Got a 8+ character length receipt?
     // So there were a successfull send operation.
     // No need to use drupal's strlen() equivalent here.
     if (strlen($soap_results) >= 8) {
       // TODO: Make it configurable to show/hide SMS receipt.
-      return _sms_irantc_success('SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results), FALSE);
+      return _sms_afe_success('SMS message has been sent successfully. SMS Receipt: @receipt', array('@receipt' => $soap_results), FALSE);
     }
     // Otherwise we got a error status code.
     // TODO: Make it possible to operate in silent mode.
-    return _sms_irantc_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results), FALSE);
+    return _sms_afe_error('There were an error while sending your SMS message. Error code: @code', array('@code' => $soap_results), FALSE);
   }
 
   // Parsing a credit typed method results.
-  elseif (_sms_irantc_method_type($soap_method) == SMS_IRANTC_TYPE_CREDIT) {
+  elseif (_sms_afe_method_type($soap_method) == sms_afe_TYPE_CREDIT) {
     switch ($soap_results) {
       case '-1':
         drupal_set_message(t('Invalid username or password.'), 'error', FALSE);
@@ -544,7 +544,7 @@ function _sms_irantc_soap_parse($soap_method, $soap_results) {
  * @return
  *   The method category.
  */
-function _sms_irantc_method_type($method) {
+function _sms_afe_method_type($method) {
   // Defining method categories as arrays
   // for better readability and easy future edits.
   $types = array(
@@ -557,10 +557,10 @@ function _sms_irantc_method_type($method) {
   );
 
   if (in_array($method, $types['SEND'])) {
-    return SMS_IRANTC_TYPE_SEND;
+    return sms_afe_TYPE_SEND;
   }
   elseif (in_array($method, $types['CREDIT'])) {
-    return SMS_IRANTC_TYPE_CREDIT;
+    return sms_afe_TYPE_CREDIT;
   }
 }
 
@@ -573,7 +573,7 @@ function _sms_irantc_method_type($method) {
  * @return
  *   Prefix-purged number.
  */
-function _sms_irantc_number_prefix_purge($number) {
+function _sms_afe_number_prefix_purge($number) {
   $number = ltrim(trim($number), '0');
   $number = str_replace('+98', '', $number);
 
