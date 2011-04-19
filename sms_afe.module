@@ -123,18 +123,13 @@ function sms_afe_admin_form($configuration) {
  * Validation callback for administration form.
  */
 function sms_afe_admin_form_validate($form, &$form_state) {
+  // Check line number:
   if (!ctype_digit($form_state['values']['sms_afe_line'])) {
     form_set_error('sms_afe_line', t('SMS line number needs to be a numeric value.'));
-    return;
   }
-
+  // Check SOAP server endpoint address:
   if (!valid_url($form_state['values']['sms_afe_soap_server'], TRUE)) {
     form_set_error('sms_afe_soap_server', t('SOAP Server Endpoint address needs to be a valid URL.'));
-    return;
-  }
-
-  if ($form_state['values']['sms_afe_use_line_name']) {
-    drupal_set_message(t('You have chosen to use a <em>Line Name</em> instead of your <em>Line Number</em> for outgoing messages. Please make sure that you have a Line Name bundled with your account at <a href="!link">AFE control panel</a> or you get errors.', array('!link' => 'http://AFE/')), 'warning');
   }
 }
 
