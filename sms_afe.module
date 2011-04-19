@@ -2,16 +2,8 @@
 
 /**
  * @file
- * Contains necessary Iran.tc gateway hooks, helpers and callbacks.
+ * Contains necessary AFE gateway hooks, helpers and callbacks.
  */
-
-/**
- * Module constants.
- */
-define('SMS_IRANTC_METHOD_NEW', 1);
-define('SMS_IRANTC_METHOD_TOTAL', 2);
-define('SMS_IRANTC_TYPE_SEND', 3);
-define('SMS_IRANTC_TYPE_CREDIT', 4);
 
 /**
  * Implements hook_menu().
