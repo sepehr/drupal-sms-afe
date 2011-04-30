@@ -169,7 +169,7 @@ function sms_afe_admin_form_validate($form, &$form_state) {
  *   Formatted number.
  */
 function sms_afe_format_number($number, $options = array()) {
-  return _sms_afe_number_prefix_purge($number);
+  //return _sms_afe_number_prefix_purge($number);
 }
 
 /**
@@ -184,10 +184,10 @@ function sms_afe_format_number($number, $options = array()) {
  *   Error if could not validate.
  */
 function sms_afe_validate_number(&$number, $options = array()) {
-  $number = _sms_afe_number_prefix_purge($number);
-  if (drupal_strlen($number) != 10) {
-    return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
-  }
+  //$number = _sms_afe_number_prefix_purge($number);
+  //if (drupal_strlen($number) != 10) {
+  //  return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
+  //}
 }
 
 /**
@@ -209,7 +209,7 @@ function sms_afe_send($number, $message, $options) {
     'Username' => '',
     'Password' => '',
     'Number'  => '',
-    'Mobile'  => $number,
+    'Mobile'  => array('string', $number),
     'Message' => $message,
     'Type' => '1',
   ));
@@ -253,12 +253,13 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
   $gateway = sms_gateways('gateway', 'afe');
 
   // Filling necessary SOAP call auth parameters.
+  $soap_params['Number'] = $gateway['configuration']['sms_afe_line'];
   $soap_params['Username'] = $gateway['configuration']['sms_afe_username'];
   $soap_params['Password'] = $gateway['configuration']['sms_afe_password'];
 
   // Instantiate a DrupalSoapClient instance.
   $soap_server = $gateway['configuration']['sms_afe_soap_server'];
-  $soap_client = soapclient_init_client($soap_server, FALSE, $soap_options);
+  $soap_client = soapclient_init_client($soap_server, TRUE, $soap_options);
 
   // Checking instantiation errors.
   if ($soap_client['#error']) {
@@ -269,6 +270,11 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
 
   // Call the SOAP method.
   $soap_results = $soap_client['#return']->call($soap_method, $soap_params);
+
+dpr($soap_params);
+dpr($soap_results);
+die();
+
   // And check for errors.
   if ($soap_results['#error']) {
     return _sms_afe_error('Failed to send the SMS message. Faultstring: @faultstring, Error: @error', array(
@@ -355,6 +361,7 @@ function _sms_afe_success($message, $variables = array(), $display = TRUE) {
  *   or the SOAP result itself in case of no failure.
  */
 function _sms_afe_soap_parse($soap_method, $soap_results) {
+  dpm('parse:');
   dpm($results);
 }
 
