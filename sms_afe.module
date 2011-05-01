@@ -261,6 +261,10 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
   $soap_server = $gateway['configuration']['sms_afe_soap_server'];
   $soap_client = soapclient_init_client($soap_server, TRUE, $soap_options);
 
+  // Set AFE specific SOAP settings.
+  $soap_client['#return']->client->decode_utf8 = FALSE;
+  $soap_client['#return']->client->defencoding = 'UTF-8';
+
   // Checking instantiation errors.
   if ($soap_client['#error']) {
     // Log errors.
