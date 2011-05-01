@@ -206,10 +206,7 @@ function sms_afe_validate_number(&$number, $options = array()) {
 function sms_afe_send($number, $message, $options) {
   // Execute remote SOAP method.
   $results = _sms_afe_soap_call('SendMessage', array(
-    'Username' => '',
-    'Password' => '',
-    'Number'  => '',
-    'Mobile'  => array('string', $number),
+    'Mobile'  => array('string' => $number),
     'Message' => $message,
     'Type' => '1',
   ));
@@ -217,14 +214,13 @@ function sms_afe_send($number, $message, $options) {
   // Return the error array, if there were any.
   // If $soap_results['status'] is set to FALSE,
   // $soap_results contains the error array, not the SOAP call results.
-  if ($results['status'] == FALSE) {
-    drupal_set_message(t($results['message'], $results['variables']), 'error');
+  if (isset($results['status']) && $results['status'] == FALSE) {
     return $results;
   }
 
   // If we're here, there were no error in the SOAP call and
   // its results. Now, we have to check the SOAP operation status code.
-  return _sms_afe_soap_parse('SendSMS', $results);
+  return _sms_afe_soap_parse('SendMessage', $results);
 }
 
 /**
@@ -261,10 +257,6 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
   $soap_server = $gateway['configuration']['sms_afe_soap_server'];
   $soap_client = soapclient_init_client($soap_server, TRUE, $soap_options);
 
-  // Set AFE specific SOAP settings.
-  $soap_client['#return']->client->decode_utf8 = FALSE;
-  $soap_client['#return']->client->defencoding = 'UTF-8';
-
   // Checking instantiation errors.
   if ($soap_client['#error']) {
     // Log errors.
@@ -272,12 +264,12 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
     return _sms_afe_error('Could not connect to AFE SMS gateway webservice, please recheck SOAP settings. Error details has been logged.', FALSE);
   }
 
+  // Set SOAP client settings before the remote call.
+  $soap_client['#return']->client->decode_utf8 = FALSE;
+  $soap_client['#return']->client->defencoding = 'UTF-8';
+
   // Call the SOAP method.
   $soap_results = $soap_client['#return']->call($soap_method, $soap_params);
-
-dpr($soap_params);
-dpr($soap_results);
-die();
 
   // And check for errors.
   if ($soap_results['#error']) {
@@ -308,7 +300,7 @@ die();
  * @return
  *   The said error array.
  */
-function _sms_afe_error($message, $variables = array(), $display = TRUE) {
+function _sms_afe_error($message, $variables = array(), $display = FALSE) {
   if ($display) {
     drupal_set_message(t($message, $variables), 'error', FALSE);
   }
@@ -337,7 +329,7 @@ function _sms_afe_error($message, $variables = array(), $display = TRUE) {
  * @return
  *   The said error array.
  */
-function _sms_afe_success($message, $variables = array(), $display = TRUE) {
+function _sms_afe_success($message, $variables = array(), $display = FALSE) {
   if ($display) {
     drupal_set_message(t($message, $variables));
   }
@@ -360,13 +352,18 @@ function _sms_afe_success($message, $variables = array(), $display = TRUE) {
  *
  * @return mixed
  *   Either an array indicating the result of the send
- *   as per required by SMSFramework or NULL indicating a
- *   failure for numeric results (sms_afe_TYPE_CREDIT),
- *   or the SOAP result itself in case of no failure.
+ *   as per required by SMSFramework or the SOAP result
+ *   itself in case of no failure.
  */
 function _sms_afe_soap_parse($soap_method, $soap_results) {
-  dpm('parse:');
-  dpm($results);
+  switch (strtolower($soap_results["{$soap_method}Result"]['string'])) {
+    // Well sent!
+    case 'send successfully':
+      return _sms_afe_success($soap_results["{$soap_method}Result"]['string']);
+    // There were errors.
+    default:
+      return _sms_afe_error($soap_results["{$soap_method}Result"]['string']);
+  }
 }
 
 /**
