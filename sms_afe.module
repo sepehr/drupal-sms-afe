@@ -123,7 +123,7 @@ function sms_afe_admin_form($configuration) {
     '#type' => 'select',
     '#title' => t('Default sending method'),
     '#description' => t('Specify how the outgoing message will be appeared on the recipient device.'),
-    '#default_value' => 1,
+    '#default_value' => isset($configuration['sms_afe_send_method']) ? $configuration['sms_afe_send_method'] : '1',
     '#required' => TRUE,
     '#options' => array(
       // Show on recipient's device screen and do not save:
@@ -224,7 +224,6 @@ function sms_afe_send($number, $message, $options) {
   $results = _sms_afe_soap_call('SendMessage', array(
     'Mobile'  => array('string' => $number),
     'Message' => $message,
-    'Type' => '1',
   ));
 
   // Return the error array, if there were any.
@@ -261,13 +260,18 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
     );
   }
 
-  // Getting gateway configuration.
+  // Get gateway configuration.
   $gateway = sms_gateways('gateway', 'afe');
 
   // Filling necessary SOAP call auth parameters.
   $soap_params['Number'] = $gateway['configuration']['sms_afe_line'];
   $soap_params['Username'] = $gateway['configuration']['sms_afe_username'];
   $soap_params['Password'] = $gateway['configuration']['sms_afe_password'];
+
+  // Add SendMessage specific parameters.
+  if ($soap_method == 'SendMessage') {
+    $soap_params['Type'] = $gateway['configuration']['sms_afe_send_method'];
+  }
 
   // Instantiate a DrupalSoapClient instance.
   $soap_server = $gateway['configuration']['sms_afe_soap_server'];
