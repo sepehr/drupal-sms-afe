@@ -113,7 +113,7 @@ function sms_afe_admin_form($configuration) {
     '#required' => TRUE,
   );
 
-  // Outgoing SMS Settings fieldset.
+  // Outgoing SMS Settings fieldset:
   $form['sms_afe_outgoing_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Outgoing SMS Settings'),
@@ -149,7 +149,7 @@ function sms_afe_admin_form($configuration) {
   // also provide incoming messages configuration and account credits.
   if ($configuration['sms_afe_username'] && $configuration['sms_afe_password']) {
     global $base_root;
-    // Incoming SMS Settings fieldset.
+    // Incoming SMS Settings fieldset:
     $form['sms_afe_incoming_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Incoming SMS Settings'),
