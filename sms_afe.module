@@ -118,6 +118,22 @@ function sms_afe_admin_form($configuration) {
     '#default_value' => $configuration['sms_afe_soap_server'] ? $configuration['sms_afe_soap_server'] : SMS_AFE_DEFAULT_GATEWAY,
     '#required' => TRUE,
   );
+  // SMS sending method:
+  $form['sms_afe_outgoing_settings']['sms_afe_send_method'] = array(
+    '#type' => 'select',
+    '#title' => t('Default sending method'),
+    '#description' => t('Specify how the outgoing message will be appeared on the recipient device.'),
+    '#default_value' => 1,
+    '#required' => TRUE,
+    '#options' => array(
+      // Show on recipient's device screen and do not save:
+      '0' => t('Show on device screen'),
+      // Store on the device default memory:
+      '1' => t('Store in device memory'),
+      // Store on the device SIM memory:
+      '2' => t('Store in the device SIM'),
+    ),
+  );
 
   // If API credentials is already set,
   // also provide incoming messages configuration.
