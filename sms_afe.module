@@ -8,7 +8,7 @@
 /**
  * Constant for AFE default gateway address.
  */
-define('SMS_AFE_DEFAULT_GATEWAY', 'http://www.afe.ir/webservice/webservice.asmx');
+define('SMS_AFE_DEFAULT_GATEWAY', 'http://www.afe.ir/webservice/webservice.asmx?wsdl');
 
 /**
  * Implements hook_menu().
