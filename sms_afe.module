@@ -6,9 +6,19 @@
  */
 
 /**
- * Constant for AFE default gateway address.
+ * Indicates AFE default gateway address.
  */
 define('SMS_AFE_DEFAULT_GATEWAY', 'http://www.afe.ir/webservice/webservice.asmx?wsdl');
+
+/**
+ * Contains the AFE SMS send remote method.
+ */
+define('SMS_AFE_METHOD_SEND', 'SendMessage');
+
+/**
+ * Contains the AFE SMS credit remote method.
+ */
+define('SMS_AFE_METHOD_CREDIT', 'GetRemainingCredit');
 
 /**
  * Implements hook_menu().
@@ -136,7 +146,7 @@ function sms_afe_admin_form($configuration) {
   );
 
   // If API credentials is already set,
-  // also provide incoming messages configuration.
+  // also provide incoming messages configuration and account credits.
   if ($configuration['sms_afe_username'] && $configuration['sms_afe_password']) {
     global $base_root;
     // Incoming SMS Settings fieldset.
@@ -153,6 +163,23 @@ function sms_afe_admin_form($configuration) {
       '#description' => t("This is where we listen for incoming SMS messages. You need to copy & paste this URL into your http://afe.ir/ panel's settings."),
       '#value' => $base_root . url('sms/afe/receiver'),
       '#disabled' => TRUE,
+    );
+
+    // Account information:
+    $form['sms_afe_account_info'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Account Information'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    // Account credits information:
+    $form['sms_afe_account_info']['sms_afe_account_credits'] = array(
+      '#type' => 'item',
+      '#title' => t('Account Balance'),
+      '#description' => t('Your AFE SMS balance.'),
+      '#value' => t('@credit IRR.', array(
+        '@credit' => sms_afe_credits(TRUE),
+      )),
     );
   }
 
@@ -221,21 +248,47 @@ function sms_afe_validate_number(&$number, $options = array()) {
  */
 function sms_afe_send($number, $message, $options) {
   // Execute remote SOAP method.
-  $results = _sms_afe_soap_call('SendMessage', array(
+  $results = _sms_afe_soap_call(SMS_AFE_METHOD_SEND, array(
     'Mobile'  => array('string' => $number),
     'Message' => $message,
   ));
 
   // Return the error array, if there were any.
-  // If $soap_results['status'] is set to FALSE,
-  // $soap_results contains the error array, not the SOAP call results.
-  if (isset($results['status']) && $results['status'] == FALSE) {
+  // If $results['status'] is set to FALSE, $results
+  // contains the error array, not the SOAP call results.
+  if (isset($results['status']) && !$results['status']) {
     return $results;
   }
 
   // If we're here, there were no error in the SOAP call and
-  // its results. Now, we have to check the SOAP operation status code.
-  return _sms_afe_soap_parse('SendMessage', $results);
+  // its results. Now, we have to check & parse the SOAP results.
+  return _sms_afe_soap_parse(SMS_AFE_METHOD_SEND, $results);
+}
+
+/**
+ * API function to get AFE account credits.
+ *
+ * @param $format
+ *   Whether to format the results or not.
+ *
+ * @return
+ *   The account credits or the proper service error on failure.
+ */
+function sms_afe_credits($format = FALSE) {
+  // Execute remote SOAP method.
+  $results = _sms_afe_soap_call(SMS_AFE_METHOD_CREDIT);
+
+  // Return the error array, if there were any.
+  // If $results['status'] is set to FALSE, $results
+  // contains the error array, not the SOAP call results.
+  if (isset($results['status']) && !$results['status']) {
+    return $results['message'];
+  }
+
+  // If we're here, there were no error in the SOAP call and
+  // its results. Now, we have to check & parse the SOAP results.
+  $results = _sms_afe_soap_parse(SMS_AFE_METHOD_CREDIT, $results);
+  return ($format && is_numeric($results))? number_format($results) : $results;
 }
 
 /**
@@ -264,12 +317,14 @@ function _sms_afe_soap_call($soap_method, $soap_params = array(), $soap_options 
   $gateway = sms_gateways('gateway', 'afe');
 
   // Filling necessary SOAP call auth parameters.
-  $soap_params['Number'] = $gateway['configuration']['sms_afe_line'];
   $soap_params['Username'] = $gateway['configuration']['sms_afe_username'];
   $soap_params['Password'] = $gateway['configuration']['sms_afe_password'];
 
   // Add SendMessage specific parameters.
-  if ($soap_method == 'SendMessage') {
+  if ($soap_method == SMS_AFE_METHOD_SEND) {
+    // Line number:
+    $soap_params['Number'] = $gateway['configuration']['sms_afe_line'];
+    // And the sending method:
     $soap_params['Type'] = $gateway['configuration']['sms_afe_send_method'];
   }
 
@@ -376,13 +431,19 @@ function _sms_afe_success($message, $variables = array(), $display = FALSE) {
  *   itself in case of no failure.
  */
 function _sms_afe_soap_parse($soap_method, $soap_results) {
-  switch (strtolower($soap_results["{$soap_method}Result"]['string'])) {
-    // Well sent!
-    case 'send successfully':
-      return _sms_afe_success($soap_results["{$soap_method}Result"]['string']);
-    // There were errors.
-    default:
-      return _sms_afe_error($soap_results["{$soap_method}Result"]['string']);
+  switch ($soap_method) {
+    case SMS_AFE_METHOD_CREDIT:
+      return $soap_results['GetRemainingCreditResult'];
+
+    case SMS_AFE_METHOD_SEND:
+      switch (strtolower($soap_results['SendMessageResult']['string'])) {
+        // Well sent!
+        case 'send successfully':
+          return _sms_afe_success($soap_results['SendMessageResult']['string']);
+        // There were errors.
+        default:
+          return _sms_afe_error($soap_results['SendMessageResult']['string']);
+      }
   }
 }
 
