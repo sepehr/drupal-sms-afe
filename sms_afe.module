@@ -118,7 +118,7 @@ function sms_afe_admin_form($configuration) {
     '#default_value' => $configuration['sms_afe_soap_server'] ? $configuration['sms_afe_soap_server'] : SMS_AFE_DEFAULT_GATEWAY,
     '#required' => TRUE,
   );
-  // SMS sending method:
+  // Default SMS sending method:
   $form['sms_afe_outgoing_settings']['sms_afe_send_method'] = array(
     '#type' => 'select',
     '#title' => t('Default sending method'),
@@ -185,7 +185,7 @@ function sms_afe_admin_form_validate($form, &$form_state) {
  *   Formatted number.
  */
 function sms_afe_format_number($number, $options = array()) {
-  //return _sms_afe_number_prefix_purge($number);
+  return _sms_afe_number_prefix_purge($number);
 }
 
 /**
@@ -200,10 +200,10 @@ function sms_afe_format_number($number, $options = array()) {
  *   Error if could not validate.
  */
 function sms_afe_validate_number(&$number, $options = array()) {
-  //$number = _sms_afe_number_prefix_purge($number);
-  //if (drupal_strlen($number) != 10) {
-  //  return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
-  //}
+  $number = _sms_afe_number_prefix_purge($number);
+  if (drupal_strlen($number) != 10) {
+    return form_set_error('number', t('Please ensure that you have entered a valid mobile number.'));
+  }
 }
 
 /**
