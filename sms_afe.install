@@ -14,7 +14,6 @@ function sms_afe_install() {
   ));
 }
 
-
 /**
  * Implements hook_uninstall().
  */
